@@ -1,21 +1,41 @@
-import * as core from '@actions/core';
-import fs from 'fs';
-import { formatMarkdown } from './formatMarkdown';
-import { postComment } from './postComment';
+import { getInput } from "@actions/core";
+import { context, getOctokit } from "@actions/github";
+import fs from "fs";
+import path from "path";
+import { formatCoverageMarkdown } from "./utils/formatMarkdown";
+import { upsertCoverageComment } from "./utils/github";
+import { compareCoverage, CoverageSummary } from "./utils/compareCoverage";
 
 async function run() {
   try {
-    const token = core.getInput('github-token');
-    const basePath = core.getInput('base');
-    const headPath = core.getInput('head');
+    const githubToken = getInput("github-token", { required: true });
+    const basePath = getInput("base", { required: true });
+    const headPath = getInput("head", { required: true });
 
-    const base = JSON.parse(fs.readFileSync(basePath, 'utf-8'));
-    const pr = JSON.parse(fs.readFileSync(headPath, 'utf-8'));
+    const baseJson = fs.readFileSync(path.resolve(basePath), "utf-8");
+    const headJson = fs.readFileSync(path.resolve(headPath), "utf-8");
 
-    const markdown = formatMarkdown(base, pr);
-    await postComment(token, markdown);
-  } catch (err) {
-    core.setFailed((err as Error).message);
+    const base: CoverageSummary = JSON.parse(baseJson);
+    const pr: CoverageSummary = JSON.parse(headJson);
+
+    const rows = compareCoverage(base, pr);
+    const markdown = formatCoverageMarkdown(rows);
+
+    const octokit = getOctokit(githubToken);
+    const { owner, repo } = context.repo;
+    const prNumber = context.payload.pull_request?.number;
+
+    if (!prNumber) throw new Error("Pull request number not found");
+
+    await upsertCoverageComment({
+      octokit,
+      owner,
+      repo,
+      prNumber,
+      body: markdown,
+    });
+  } catch (error) {
+    console.error("❌ Error generating coverage comment:", error);
   }
 }
 
