@@ -30,25 +30,10 @@ export function formatCoverageMarkdown(
     }${delta.toFixed(2)}% ${coloredSymbol} |`;
   });
 
-  const reducedCoverageSection = reducedFiles?.length
-    ? [
-        "<details>",
-        "<summary>📉 Files with Reduced Coverage</summary>",
-        "",
-        "| File | Coverage Drop |",
-        "|------|----------------|",
-        ...reducedFiles.map(
-          ({ file, delta }) =>
-            `| \`${file}\` | ${delta.toFixed(2)}% 🟠⬇️ |`
-        ),
-        "</details>"
-      ].join("\n")
-    : "";
-
   const fileBreakdownSection = fileCoverage?.length
     ? [
         "<details>",
-        "<summary>📂 File-wise Coverage Details</summary>",
+        "<summary>▶️ Toggle Coverage Breakdown</summary>",
         "",
         "| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines |",
         "|------|---------|----------|---------|---------|------------------|",
@@ -60,14 +45,9 @@ export function formatCoverageMarkdown(
               uncoveredLines || "-"
             } |`
         ),
-        "</details>"
+        "</details>",
       ].join("\n")
     : "";
 
-  return [
-    summaryTableHeader,
-    ...summaryRows,
-    reducedCoverageSection,
-    fileBreakdownSection,
-  ].join("\n\n");
+  return [summaryTableHeader, ...summaryRows, fileBreakdownSection].join("\n\n");
 }

@@ -30010,29 +30010,18 @@ function formatCoverageMarkdown(rows, reducedFiles, fileCoverage) {
             coloredSymbol = "🟠⬇️";
         return `| ${metric} | ${base.toFixed(2)}% | ${pr.toFixed(2)}% | ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}% ${coloredSymbol} |`;
     });
-    const reducedCoverageSection = reducedFiles?.length
-        ? [
-            `<details><summary>📉 Files with Reduced Coverage</summary>\n`,
-            `\n| File | Coverage Drop |\n|------|----------------|`,
-            ...reducedFiles.map(({ file, delta }) => `| \`${file}\` | ${delta.toFixed(2)}% 🟠⬇️ |`),
-            `</details>`
-        ].join("\n")
-        : "";
     const fileBreakdownSection = fileCoverage?.length
         ? [
-            `<details><summary>📂 File-wise Coverage Details</summary>\n`,
-            `\n| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines |`,
-            `|------|---------|----------|---------|---------|------------------|`,
+            "<details>",
+            "<summary>▶️ Toggle Coverage Breakdown</summary>",
+            "",
+            "| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines |",
+            "|------|---------|----------|---------|---------|------------------|",
             ...fileCoverage.map(({ file, statements, branches, functions, lines, uncoveredLines }) => `| \`${file}\` | ${statements.toFixed(2)} | ${branches.toFixed(2)} | ${functions.toFixed(2)} | ${lines.toFixed(2)} | ${uncoveredLines || "-"} |`),
-            `</details>`
+            "</details>",
         ].join("\n")
         : "";
-    return [
-        summaryTableHeader,
-        ...summaryRows,
-        reducedCoverageSection,
-        fileBreakdownSection
-    ].join("\n");
+    return [summaryTableHeader, ...summaryRows, fileBreakdownSection].join("\n\n");
 }
 
 
