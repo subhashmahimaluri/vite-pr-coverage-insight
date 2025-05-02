@@ -52,7 +52,7 @@ export function formatCoverageMarkdown(rows: {
   pr: number;
   delta: number;
   symbol: string;
-}[]) {
+}[], reducedFiles?: { file: string; delta: number }[]) {
   const header = `### 📊 Vite Coverage Report\n\n| Metric     | Base     | PR       | ∆        |\n|------------|----------|----------|----------|`;
 
   const lines = rows.map(
@@ -64,7 +64,18 @@ export function formatCoverageMarkdown(rows: {
     }
   );
 
-  return [header, ...lines].join('\n');
+  const fileDetails = reducedFiles?.length
+    ? [
+        "\n<details><summary>📉 Files with Reduced Coverage</summary>\n",
+        "\n| File | Coverage Drop |\n|------|----------------|",
+        ...reducedFiles.map(
+          ({ file, delta }) => `| \`${file}\` | ${delta.toFixed(2)}% 🟠⬇️ |`
+        ),
+        "</details>"
+      ].join("\n")
+    : "";
+
+  return [header, ...lines, fileDetails].join("\n");
 }
 
 // src/utils/compareCoverage.ts

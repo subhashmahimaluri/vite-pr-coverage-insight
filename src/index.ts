@@ -19,7 +19,8 @@ async function run() {
     const pr: CoverageSummary = JSON.parse(headJson);
 
     const rows = compareCoverage(base, pr);
-    const markdown = formatCoverageMarkdown(rows);
+
+    const markdown = formatCoverageMarkdown(rows, []); // placeholder for reduced file deltas
 
     const octokit = getOctokit(githubToken);
     const { owner, repo } = context.repo;
