@@ -25,32 +25,42 @@ export function formatCoverageMarkdown(
     let coloredSymbol = symbol;
     if (symbol === "⬆️") coloredSymbol = "🟢⬆️";
     else if (symbol === "⬇️") coloredSymbol = "🟠⬇️";
-    return `| ${metric} | ${base.toFixed(2)}% | ${pr.toFixed(2)}% | ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}% ${coloredSymbol} |`;
+    return `| ${metric} | ${base.toFixed(2)}% | ${pr.toFixed(2)}% | ${
+      delta >= 0 ? "+" : ""
+    }${delta.toFixed(2)}% ${coloredSymbol} |`;
   });
 
   const reducedCoverageSection = reducedFiles?.length
     ? [
-        `<details><summary>📉 Files with Reduced Coverage</summary>\n`,
-        `\n| File | Coverage Drop |\n|------|----------------|`,
+        "<details>",
+        "<summary>📉 Files with Reduced Coverage</summary>",
+        "",
+        "| File | Coverage Drop |",
+        "|------|----------------|",
         ...reducedFiles.map(
-          ({ file, delta }) => `| \`${file}\` | ${delta.toFixed(2)}% 🟠⬇️ |`
+          ({ file, delta }) =>
+            `| \`${file}\` | ${delta.toFixed(2)}% 🟠⬇️ |`
         ),
-        `</details>`
+        "</details>"
       ].join("\n")
     : "";
 
   const fileBreakdownSection = fileCoverage?.length
     ? [
-        `<details><summary>📂 File-wise Coverage Details</summary>\n`,
-        `\n| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines |`,
-        `|------|---------|----------|---------|---------|------------------|`,
+        "<details>",
+        "<summary>📂 File-wise Coverage Details</summary>",
+        "",
+        "| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines |",
+        "|------|---------|----------|---------|---------|------------------|",
         ...fileCoverage.map(
           ({ file, statements, branches, functions, lines, uncoveredLines }) =>
             `| \`${file}\` | ${statements.toFixed(2)} | ${branches.toFixed(
               2
-            )} | ${functions.toFixed(2)} | ${lines.toFixed(2)} | ${uncoveredLines || "-"} |`
+            )} | ${functions.toFixed(2)} | ${lines.toFixed(2)} | ${
+              uncoveredLines || "-"
+            } |`
         ),
-        `</details>`
+        "</details>"
       ].join("\n")
     : "";
 
@@ -58,6 +68,6 @@ export function formatCoverageMarkdown(
     summaryTableHeader,
     ...summaryRows,
     reducedCoverageSection,
-    fileBreakdownSection
-  ].join("\n");
+    fileBreakdownSection,
+  ].join("\n\n");
 }
