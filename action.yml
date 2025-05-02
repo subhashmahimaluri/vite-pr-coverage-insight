@@ -1,0 +1,15 @@
+name: 'Vite PR Coverage Insight'
+description: 'Compare coverage between main and PR, post result to PR comment'
+inputs:
+  github-token:
+    required: true
+    description: 'GitHub token for PR comment'
+  base:
+    required: true
+    description: 'Path to base coverage-summary.json'
+  head:
+    required: true
+    description: 'Path to PR coverage-summary.json'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

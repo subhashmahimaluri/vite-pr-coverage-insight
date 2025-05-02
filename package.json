@@ -1,0 +1,19 @@
+{
+  "name": "vite-pr-coverage-insight",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/subhashmahimaluri/vite-pr-coverage-insight.git",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
