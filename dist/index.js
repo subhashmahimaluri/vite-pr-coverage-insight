@@ -29923,13 +29923,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+// src/index.ts
 const core_1 = __nccwpck_require__(7484);
-const github_1 = __nccwpck_require__(3228);
 const fs_1 = __importDefault(__nccwpck_require__(9896));
 const path_1 = __importDefault(__nccwpck_require__(6928));
 const formatMarkdown_1 = __nccwpck_require__(3335);
-const compareCoverage_1 = __nccwpck_require__(5296);
 const checkRun_1 = __nccwpck_require__(7668);
+const compareCoverage_1 = __nccwpck_require__(5296);
 async function run() {
     try {
         const githubToken = (0, core_1.getInput)("github-token", { required: true });
@@ -29940,20 +29940,15 @@ async function run() {
         const base = JSON.parse(baseJson);
         const pr = JSON.parse(headJson);
         const rows = (0, compareCoverage_1.compareCoverage)(base, pr);
-        const markdown = (0, formatMarkdown_1.formatCoverageMarkdown)(rows, []); // placeholder for reduced file deltas
-        const octokit = (0, github_1.getOctokit)(githubToken);
-        const { owner, repo } = github_1.context.repo;
-        const prNumber = github_1.context.payload.pull_request?.number;
-        if (!prNumber)
-            throw new Error("Pull request number not found");
+        const markdown = (0, formatMarkdown_1.formatCoverageMarkdown)(rows, []);
         await (0, checkRun_1.postCoverageCheckRun)({
-            token: githubToken, // ✅ use the same token from input
+            token: githubToken,
             title: "📊 Vite Coverage Report",
             summary: markdown,
         });
     }
     catch (error) {
-        console.error("❌ Error generating coverage comment:", error);
+        console.error("❌ Error generating coverage check run:", error);
     }
 }
 run();
@@ -29972,27 +29967,19 @@ const github_1 = __nccwpck_require__(3228);
 async function postCoverageCheckRun({ token, title, summary, conclusion = "success", name = "📊 Vite Coverage Report", }) {
     const octokit = (0, github_1.getOctokit)(token);
     const { owner, repo } = github_1.context.repo;
-    // Use pull request SHA if available, fallback to context.sha
     const head_sha = github_1.context.payload.pull_request?.head.sha || github_1.context.sha;
-    try {
-        await octokit.rest.checks.create({
-            owner,
-            repo,
-            name,
-            head_sha,
-            status: "completed",
-            conclusion,
-            output: {
-                title,
-                summary,
-            },
-        });
-        console.log("✅ Coverage check run created successfully");
-    }
-    catch (error) {
-        console.error("❌ Failed to create check run:", error);
-        throw error;
-    }
+    await octokit.rest.checks.create({
+        owner,
+        repo,
+        name,
+        head_sha,
+        status: "completed",
+        conclusion,
+        output: {
+            title,
+            summary,
+        },
+    });
 }
 
 
