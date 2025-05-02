@@ -4,7 +4,7 @@ import { context, getOctokit } from "@actions/github";
 import fs from "fs";
 import path from "path";
 import { formatCoverageMarkdown } from "./utils/formatMarkdown";
-import { postCoverageCheckRun } from "./utils/checkRun";
+import { upsertCoverageComment } from "./utils/github";
 import { compareCoverage, CoverageSummary } from "./utils/compareCoverage";
 
 async function run() {
@@ -20,15 +20,23 @@ async function run() {
     const pr: CoverageSummary = JSON.parse(headJson);
 
     const rows = compareCoverage(base, pr);
-    const markdown = formatCoverageMarkdown(rows, []);
+    const markdown = formatCoverageMarkdown(rows, []); // placeholder for reduced files
 
-    await postCoverageCheckRun({
-      token: githubToken,
-      title: "📊 Vite Coverage Report",
-      summary: markdown,
+    const octokit = getOctokit(githubToken);
+    const { owner, repo } = context.repo;
+    const prNumber = context.payload.pull_request?.number;
+
+    if (!prNumber) throw new Error("Pull request number not found");
+
+    await upsertCoverageComment({
+      octokit,
+      owner,
+      repo,
+      prNumber,
+      body: markdown,
     });
   } catch (error) {
-    console.error("❌ Error generating coverage check run:", error);
+    console.error("❌ Error generating coverage comment:", error);
   }
 }
 

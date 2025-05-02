@@ -29,15 +29,13 @@ export async function upsertCoverageComment({
   const taggedBody = `<!-- coverage-report:${botTag} -->\n\n${body}\n\n_Reported by **${botTag}**_`;
 
   if (existing) {
-    // ✅ Delete the old comment
     await octokit.rest.issues.deleteComment({
       owner,
       repo,
       comment_id: existing.id,
     });
   }
-  
-  // ✅ Create a fresh comment — this will appear at the latest commit
+
   await octokit.rest.issues.createComment({
     issue_number: prNumber,
     owner,
