@@ -3,8 +3,8 @@ import { context, getOctokit } from "@actions/github";
 import fs from "fs";
 import path from "path";
 import { formatCoverageMarkdown } from "./utils/formatMarkdown";
-import { postCoverageCheckRun } from "./utils/github";
 import { compareCoverage, CoverageSummary } from "./utils/compareCoverage";
+import { postCoverageCheckRun } from "./utils/checkRun";
 
 async function run() {
   try {
@@ -29,11 +29,11 @@ async function run() {
     if (!prNumber) throw new Error("Pull request number not found");
 
     await postCoverageCheckRun({
-      token: process.env.GITHUB_TOKEN!,
+      token: githubToken, // ✅ use the same token from input
       title: "📊 Vite Coverage Report",
-      summary: markdown, // from formatCoverageMarkdown(...)
+      summary: markdown,
     });
-    
+
   } catch (error) {
     console.error("❌ Error generating coverage comment:", error);
   }

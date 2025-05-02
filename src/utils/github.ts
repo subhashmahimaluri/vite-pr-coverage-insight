@@ -1,33 +1,47 @@
-// src/utils/checkRun.ts
-import { getOctokit, context } from "@actions/github";
+// src/utils/github.ts
+import type { GitHub } from "@actions/github/lib/utils";
 
-export async function postCoverageCheckRun({
-  token,
-  title,
-  summary,
-  conclusion = "success",
-  name = "PR Coverage Report",
+export async function upsertCoverageComment({
+  octokit,
+  owner,
+  repo,
+  prNumber,
+  body,
+  botTag = "vite-pr-coverage-insight",
 }: {
-  token: string;
-  title: string;
-  summary: string;
-  conclusion?: "success" | "failure" | "neutral";
-  name?: string;
+  octokit: InstanceType<typeof GitHub>;
+  owner: string;
+  repo: string;
+  prNumber: number;
+  body: string;
+  botTag?: string;
 }) {
-  const octokit = getOctokit(token);
-  const { owner, repo } = context.repo;
-  const head_sha = context.payload.pull_request?.head.sha || context.sha;
-
-  await octokit.rest.checks.create({
+  const { data: comments } = await octokit.rest.issues.listComments({
+    issue_number: prNumber,
     owner,
     repo,
-    name,
-    head_sha,
-    status: "completed",
-    conclusion,
-    output: {
-      title,
-      summary,
-    },
+  });
+
+  const existing = comments.find((c) =>
+    c.body?.includes(`Reported by **${botTag}**`)
+  );
+
+  const taggedBody = `<!-- coverage-report:${botTag} -->\n\n${body}\n\n_Reported by **${botTag}**_`;
+
+  if (existing) {
+    // ✅ Delete the old comment
+    await octokit.rest.issues.deleteComment({
+      owner,
+      repo,
+      comment_id: existing.id,
+    });
+  }
+  
+  // ✅ Create a fresh comment — this will appear at the latest commit
+  await octokit.rest.issues.createComment({
+    issue_number: prNumber,
+    owner,
+    repo,
+    body: taggedBody,
   });
 }

@@ -29928,8 +29928,8 @@ const github_1 = __nccwpck_require__(3228);
 const fs_1 = __importDefault(__nccwpck_require__(9896));
 const path_1 = __importDefault(__nccwpck_require__(6928));
 const formatMarkdown_1 = __nccwpck_require__(3335);
-const github_2 = __nccwpck_require__(6246);
 const compareCoverage_1 = __nccwpck_require__(5296);
+const checkRun_1 = __nccwpck_require__(7668);
 async function run() {
     try {
         const githubToken = (0, core_1.getInput)("github-token", { required: true });
@@ -29946,10 +29946,10 @@ async function run() {
         const prNumber = github_1.context.payload.pull_request?.number;
         if (!prNumber)
             throw new Error("Pull request number not found");
-        await (0, github_2.postCoverageCheckRun)({
-            token: process.env.GITHUB_TOKEN,
+        await (0, checkRun_1.postCoverageCheckRun)({
+            token: githubToken, // ✅ use the same token from input
             title: "📊 Vite Coverage Report",
-            summary: markdown, // from formatCoverageMarkdown(...)
+            summary: markdown,
         });
     }
     catch (error) {
@@ -29957,6 +29957,43 @@ async function run() {
     }
 }
 run();
+
+
+/***/ }),
+
+/***/ 7668:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.postCoverageCheckRun = postCoverageCheckRun;
+const github_1 = __nccwpck_require__(3228);
+async function postCoverageCheckRun({ token, title, summary, conclusion = "success", name = "📊 Vite Coverage Report", }) {
+    const octokit = (0, github_1.getOctokit)(token);
+    const { owner, repo } = github_1.context.repo;
+    // Use pull request SHA if available, fallback to context.sha
+    const head_sha = github_1.context.payload.pull_request?.head.sha || github_1.context.sha;
+    try {
+        await octokit.rest.checks.create({
+            owner,
+            repo,
+            name,
+            head_sha,
+            status: "completed",
+            conclusion,
+            output: {
+                title,
+                summary,
+            },
+        });
+        console.log("✅ Coverage check run created successfully");
+    }
+    catch (error) {
+        console.error("❌ Failed to create check run:", error);
+        throw error;
+    }
+}
 
 
 /***/ }),
@@ -29994,41 +30031,26 @@ function compareCoverage(base, pr) {
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.formatCoverageMarkdown = formatCoverageMarkdown;
-function formatCoverageMarkdown(rows, reducedFiles = [] // ✅ second argument with default
-) {
+// src/utils/formatMarkdown.ts
+function formatCoverageMarkdown(rows, reducedFiles) {
     const header = `### 📊 Vite Coverage Report\n\n| Metric     | Base     | PR       | ∆        |\n|------------|----------|----------|----------|`;
-    const lines = rows.map(({ metric, base, pr, delta, symbol }) => `| ${metric} | ${base.toFixed(2)}% | ${pr.toFixed(2)}% | ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}% ${symbol} |`);
-    return [header, ...lines].join('\n');
-}
-
-
-/***/ }),
-
-/***/ 6246:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.postCoverageCheckRun = postCoverageCheckRun;
-// src/utils/checkRun.ts
-const github_1 = __nccwpck_require__(3228);
-async function postCoverageCheckRun({ token, title, summary, conclusion = "success", name = "PR Coverage Report", }) {
-    const octokit = (0, github_1.getOctokit)(token);
-    const { owner, repo } = github_1.context.repo;
-    const head_sha = github_1.context.payload.pull_request?.head.sha || github_1.context.sha;
-    await octokit.rest.checks.create({
-        owner,
-        repo,
-        name,
-        head_sha,
-        status: "completed",
-        conclusion,
-        output: {
-            title,
-            summary,
-        },
+    const lines = rows.map(({ metric, base, pr, delta, symbol }) => {
+        let coloredSymbol = symbol;
+        if (symbol === '⬆️')
+            coloredSymbol = '🟢⬆️';
+        else if (symbol === '⬇️')
+            coloredSymbol = '🟠⬇️';
+        return `| ${metric} | ${base.toFixed(2)}% | ${pr.toFixed(2)}% | ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}% ${coloredSymbol} |`;
     });
+    const fileDetails = reducedFiles?.length
+        ? [
+            "\n<details><summary>📉 Files with Reduced Coverage</summary>\n",
+            "\n| File | Coverage Drop |\n|------|----------------|",
+            ...reducedFiles.map(({ file, delta }) => `| \`${file}\` | ${delta.toFixed(2)}% 🟠⬇️ |`),
+            "</details>"
+        ].join("\n")
+        : "";
+    return [header, ...lines, fileDetails].join("\n");
 }
 
 
