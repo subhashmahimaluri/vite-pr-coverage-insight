@@ -29997,10 +29997,9 @@ function compareCoverage(base, pr) {
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.formatCoverageMarkdown = formatCoverageMarkdown;
-// src/utils/formatMarkdown.ts
-function formatCoverageMarkdown(rows, reducedFiles) {
+function formatCoverageMarkdown(rows, reducedFiles, fileCoverage) {
     const header = `### 📊 Vite Coverage Report\n\n| Metric     | Base     | PR       | ∆        |\n|------------|----------|----------|----------|`;
-    const lines = rows.map(({ metric, base, pr, delta, symbol }) => {
+    const summaryRows = rows.map(({ metric, base, pr, delta, symbol }) => {
         let coloredSymbol = symbol;
         if (symbol === '⬆️')
             coloredSymbol = '🟢⬆️';
@@ -30008,7 +30007,7 @@ function formatCoverageMarkdown(rows, reducedFiles) {
             coloredSymbol = '🟠⬇️';
         return `| ${metric} | ${base.toFixed(2)}% | ${pr.toFixed(2)}% | ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}% ${coloredSymbol} |`;
     });
-    const fileDetails = reducedFiles?.length
+    const reducedSection = reducedFiles?.length
         ? [
             "\n<details><summary>📉 Files with Reduced Coverage</summary>\n",
             "\n| File | Coverage Drop |\n|------|----------------|",
@@ -30016,7 +30015,16 @@ function formatCoverageMarkdown(rows, reducedFiles) {
             "</details>"
         ].join("\n")
         : "";
-    return [header, ...lines, fileDetails].join("\n");
+    const fileLevelSection = fileCoverage?.length
+        ? [
+            `\n<details><summary>📂 File-wise Coverage Breakdown</summary>\n`,
+            `\n| File | % Statements | % Branch | % Functions | % Lines | Uncovered Lines |`,
+            `|------|--------------|----------|-------------|---------|------------------|`,
+            ...fileCoverage.map(file => `| \`${file.file}\` | ${file.statements.toFixed(2)} | ${file.branches.toFixed(2)} | ${file.functions.toFixed(2)} | ${file.lines.toFixed(2)} | ${file.uncoveredLines ?? '-'} |`),
+            `</details>`
+        ].join("\n")
+        : "";
+    return [header, ...summaryRows, reducedSection, fileLevelSection].join("\n");
 }
 
 
