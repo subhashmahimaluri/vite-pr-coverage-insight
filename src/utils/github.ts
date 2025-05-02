@@ -29,20 +29,19 @@ export async function upsertCoverageComment({
   const taggedBody = `${body}\n\n_Reported by **${botTag}**_`;
 
   if (existing) {
-    await octokit.rest.issues.updateComment({
+    await octokit.rest.issues.deleteComment({
       comment_id: existing.id,
       owner,
       repo,
-      body: taggedBody,
-    });
-  } else {
-    await octokit.rest.issues.createComment({
-      issue_number: prNumber,
-      owner,
-      repo,
-      body: taggedBody,
     });
   }
+  
+  await octokit.rest.issues.createComment({
+    issue_number: prNumber,
+    owner,
+    repo,
+    body: taggedBody,
+  });
 }
 
 // src/utils/formatMarkdown.ts
