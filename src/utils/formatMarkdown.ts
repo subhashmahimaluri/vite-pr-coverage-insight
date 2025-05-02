@@ -30,11 +30,26 @@ export function formatCoverageMarkdown(
     }${delta.toFixed(2)}% ${coloredSymbol} |`;
   });
 
-  const fileBreakdownSection = fileCoverage?.length
+  const reducedCoverageSection = reducedFiles?.length
     ? [
         "<details>",
-        "<summary>▶️ Toggle Coverage Breakdown</summary>",
+        "<summary>📉 Files with Reduced Coverage</summary>",
         "",
+        "| File | Coverage Drop |",
+        "|------|----------------|",
+        ...reducedFiles.map(
+          ({ file, delta }) =>
+            `| \`${file}\` | ${delta.toFixed(2)}% 🟠⬇️ |`
+        ),
+        "</details>"
+      ].join("\n")
+    : "";
+
+    const fileBreakdownSection = fileCoverage?.length
+    ? [
+        "<details>",
+        "<summary>📁 View File Coverage Details</summary>",
+        "", // 🔥 This blank line is critical
         "| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines |",
         "|------|---------|----------|---------|---------|------------------|",
         ...fileCoverage.map(
@@ -48,6 +63,12 @@ export function formatCoverageMarkdown(
         "</details>",
       ].join("\n")
     : "";
+  
 
-  return [summaryTableHeader, ...summaryRows, fileBreakdownSection].join("\n\n");
+  return [
+    summaryTableHeader,
+    ...summaryRows,
+    reducedCoverageSection,
+    fileBreakdownSection,
+  ].join("\n\n");
 }
