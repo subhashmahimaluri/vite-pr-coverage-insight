@@ -29925,10 +29925,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 // src/index.ts
 const core_1 = __nccwpck_require__(7484);
+const github_1 = __nccwpck_require__(3228);
 const fs_1 = __importDefault(__nccwpck_require__(9896));
 const path_1 = __importDefault(__nccwpck_require__(6928));
 const formatMarkdown_1 = __nccwpck_require__(3335);
-const checkRun_1 = __nccwpck_require__(7668);
+const github_2 = __nccwpck_require__(6246);
 const compareCoverage_1 = __nccwpck_require__(5296);
 async function run() {
     try {
@@ -29940,47 +29941,25 @@ async function run() {
         const base = JSON.parse(baseJson);
         const pr = JSON.parse(headJson);
         const rows = (0, compareCoverage_1.compareCoverage)(base, pr);
-        const markdown = (0, formatMarkdown_1.formatCoverageMarkdown)(rows, []);
-        await (0, checkRun_1.postCoverageCheckRun)({
-            token: githubToken,
-            title: "📊 Vite Coverage Report",
-            summary: markdown,
+        const markdown = (0, formatMarkdown_1.formatCoverageMarkdown)(rows, []); // placeholder for reduced files
+        const octokit = (0, github_1.getOctokit)(githubToken);
+        const { owner, repo } = github_1.context.repo;
+        const prNumber = github_1.context.payload.pull_request?.number;
+        if (!prNumber)
+            throw new Error("Pull request number not found");
+        await (0, github_2.upsertCoverageComment)({
+            octokit,
+            owner,
+            repo,
+            prNumber,
+            body: markdown,
         });
     }
     catch (error) {
-        console.error("❌ Error generating coverage check run:", error);
+        console.error("❌ Error generating coverage comment:", error);
     }
 }
 run();
-
-
-/***/ }),
-
-/***/ 7668:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.postCoverageCheckRun = postCoverageCheckRun;
-const github_1 = __nccwpck_require__(3228);
-async function postCoverageCheckRun({ token, title, summary, conclusion = "success", name = "📊 Vite Coverage Report", }) {
-    const octokit = (0, github_1.getOctokit)(token);
-    const { owner, repo } = github_1.context.repo;
-    const head_sha = github_1.context.payload.pull_request?.head.sha || github_1.context.sha;
-    await octokit.rest.checks.create({
-        owner,
-        repo,
-        name,
-        head_sha,
-        status: "completed",
-        conclusion,
-        output: {
-            title,
-            summary,
-        },
-    });
-}
 
 
 /***/ }),
@@ -30038,6 +30017,39 @@ function formatCoverageMarkdown(rows, reducedFiles) {
         ].join("\n")
         : "";
     return [header, ...lines, fileDetails].join("\n");
+}
+
+
+/***/ }),
+
+/***/ 6246:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.upsertCoverageComment = upsertCoverageComment;
+async function upsertCoverageComment({ octokit, owner, repo, prNumber, body, botTag = "vite-pr-coverage-insight", }) {
+    const { data: comments } = await octokit.rest.issues.listComments({
+        issue_number: prNumber,
+        owner,
+        repo,
+    });
+    const existing = comments.find((c) => c.body?.includes(`Reported by **${botTag}**`));
+    const taggedBody = `<!-- coverage-report:${botTag} -->\n\n${body}\n\n_Reported by **${botTag}**_`;
+    if (existing) {
+        await octokit.rest.issues.deleteComment({
+            owner,
+            repo,
+            comment_id: existing.id,
+        });
+    }
+    await octokit.rest.issues.createComment({
+        issue_number: prNumber,
+        owner,
+        repo,
+        body: taggedBody,
+    });
 }
 
 
