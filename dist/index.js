@@ -30001,7 +30001,20 @@ function formatCoverageMarkdown(rows, reducedFiles = [] // ✅ second argument w
 ) {
     const header = `### 📊 Vite Coverage Report\n\n| Metric     | Base     | PR       | ∆        |\n|------------|----------|----------|----------|`;
     const lines = rows.map(({ metric, base, pr, delta, symbol }) => `| ${metric} | ${base.toFixed(2)}% | ${pr.toFixed(2)}% | ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}% ${symbol} |`);
-    return [header, ...lines].join('\n');
+    let reducedFilesMarkdown = '';
+    if (reducedFiles.length > 0) {
+        reducedFilesMarkdown = `
+<details>
+<summary>COMPONENT DETAILS</summary>
+
+| File | ∆ |
+|------|---|
+${reducedFiles.map(({ file, delta }) => `| ${file} | ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}% |`).join('\n')}
+
+</details>
+`;
+    }
+    return [header, ...lines, reducedFilesMarkdown].join('\n');
 }
 
 
