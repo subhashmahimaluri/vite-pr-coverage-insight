@@ -30001,17 +30001,8 @@ function formatCoverageMarkdown(rows, reducedFiles = [] // ✅ second argument w
 ) {
     const header = `### 📊 Vite Coverage Report\n\n| Metric     | Base     | PR       | ∆        |\n|------------|----------|----------|----------|`;
     const lines = rows.map(({ metric, base, pr, delta, symbol }) => `| ${metric} | ${base.toFixed(2)}% | ${pr.toFixed(2)}% | ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}% ${symbol} |`);
-    let reducedFilesMarkdown = '';
-    if (reducedFiles.length > 0) {
-        reducedFilesMarkdown = `
-### COMPONENT DETAILS
-
-| File | ∆ |
-|------|---|
-${reducedFiles.map(({ file, delta }) => `| ${file} | ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}% |`).join('\n')}
-`;
-    }
-    return [header, ...lines, reducedFilesMarkdown].join('\n');
+    const details = `▶️ Toggle Coverage Breakdown`;
+    return [header, ...lines, details].join('\n');
 }
 
 
