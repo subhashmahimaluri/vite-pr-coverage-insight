@@ -30004,14 +30004,11 @@ function formatCoverageMarkdown(rows, reducedFiles = [] // ✅ second argument w
     let reducedFilesMarkdown = '';
     if (reducedFiles.length > 0) {
         reducedFilesMarkdown = `
-<details>
-<summary>COMPONENT DETAILS</summary>
+### COMPONENT DETAILS
 
 | File | ∆ |
 |------|---|
 ${reducedFiles.map(({ file, delta }) => `| ${file} | ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}% |`).join('\n')}
-
-</details>
 `;
     }
     return [header, ...lines, reducedFilesMarkdown].join('\n');

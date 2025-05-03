@@ -18,14 +18,11 @@ export function formatCoverageMarkdown(
     let reducedFilesMarkdown = '';
     if (reducedFiles.length > 0) {
       reducedFilesMarkdown = `
-<details>
-<summary>COMPONENT DETAILS</summary>
+### COMPONENT DETAILS
 
 | File | ∆ |
 |------|---|
 ${reducedFiles.map(({ file, delta }) => `| ${file} | ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}% |`).join('\n')}
-
-</details>
 `;
     }
   
