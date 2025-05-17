@@ -18,7 +18,6 @@ export function formatCoverageMarkdown(
     }[] = []
   ) {
     const header = `### 📊 Vite Coverage Report\n\n| Metric     | Base     | PR       | Change   |\n|------------|----------|----------|----------|`;
-    const toggle = `\n\n<p align="right"><strong>▶️ Toggle Coverage Breakdown</strong></p>`;
   
     const lines = rows.map(
       ({ metric, base, pr, delta, symbol }) =>
@@ -60,5 +59,6 @@ export function formatCoverageMarkdown(
       fileDetailsSection += '</details>';
     }
 
-    return [header, ...lines].join('\n') + toggle + fileDetailsSection;
+    const mainTable = [header, ...lines].join('\n');
+    return `${mainTable}\n\n<details><summary>▶️ Toggle Coverage Breakdown</summary>\n${fileDetailsSection}\n</details>`;
   }
