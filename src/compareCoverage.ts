@@ -20,7 +20,7 @@ export type CoverageSummary = {
         base: basePct,
         pr: prPct,
         delta,
-        symbol: delta > 0 ? '⬆' : delta < 0 ? '⬇' : '➖',
+        symbol: delta > 0 ? '🟢' : delta < 0 ? '🔴' : '⚪',
       };
     });
   }
