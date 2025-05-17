@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 import { formatCoverageMarkdown } from "./utils/formatMarkdown";
 import { upsertCoverageComment } from "./utils/github";
-import { compareCoverage, CoverageSummary } from "./utils/compareCoverage";
+import { compareCoverage, compareFileCoverage, CoverageSummary } from "./utils/compareCoverage";
 
 async function run() {
   try {
@@ -20,7 +20,8 @@ async function run() {
     const pr: CoverageSummary = JSON.parse(headJson);
 
     const rows = compareCoverage(base, pr);
-    const markdown = formatCoverageMarkdown(rows, []); // placeholder for reduced files
+    const fileChanges = compareFileCoverage(base, pr);
+    const markdown = formatCoverageMarkdown(rows, fileChanges);
 
     const octokit = getOctokit(githubToken);
     const { owner, repo } = context.repo;
