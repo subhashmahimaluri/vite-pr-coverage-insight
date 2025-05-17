@@ -1,15 +1,14 @@
 {
   "name": "vite-pr-coverage-insight",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "repository": "https://github.com/subhashmahimaluri/vite-pr-coverage-insight.git",
   "license": "MIT",
   "scripts": {
-    "build": "tsc"
+    "build": "ncc build src/index.ts -o dist --minify",
+    "prepack": "yarn build"
   },
   "dependencies": {
-    "@actions/core": "^1.10.0",
-    "@actions/github": "^6.0.0",
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
     "@octokit/rest": "^21.1.1"
