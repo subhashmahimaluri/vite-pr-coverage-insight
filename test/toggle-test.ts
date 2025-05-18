@@ -95,7 +95,7 @@ const testFailuresPath = path.join(__dirname, 'test-failures.json');
 const testFailures = parseTestFailures(testFailuresPath);
 
 // Generate markdown with PR info and test failures
-const markdown = formatCoverageMarkdown(rows, fileCoverage, mockPrInfo, testFailures);
+const markdown = formatCoverageMarkdown(rows, [fileCoverage], mockPrInfo, testFailures);
 
 // Write the markdown to a file for inspection
 fs.writeFileSync(path.join(__dirname, 'toggle-output.md'), markdown);

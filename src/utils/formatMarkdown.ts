@@ -9,14 +9,15 @@ export function formatCoverageMarkdown(
       delta: number;
       symbol: string;
     }[],
-    fileCoverage: FileCoverageResult,
+    fileCoverage: FileCoverageResult[],
     prInfo?: {
       owner: string;
       repo: string;
       prNumber: number;
     },
-    testFailures?: TestFailuresResult | null
-  ) {
+    testFailures?: TestFailuresResult | null,
+    coverageError?: boolean
+  ): string {
     // Format the main summary table
     const header = `### 📊 Vite Coverage Report\n\n| Metric     | Base     | PR       | ∆        |\n|------------|----------|----------|----------|`;
   
@@ -30,24 +31,24 @@ export function formatCoverageMarkdown(
     // Format the file coverage breakdown section
     let fileDetailsSection = '';
     
-    if (fileCoverage.newFiles.length > 0 || fileCoverage.modifiedFiles.length > 0) {
+    const allNewFiles = fileCoverage.flatMap(fc => fc.newFiles || []);
+    const allModifiedFiles = fileCoverage.flatMap(fc => fc.modifiedFiles || []);
+
+    if (allNewFiles.length > 0 || allModifiedFiles.length > 0) {
       fileDetailsSection = '\n\n---\n\n<details><summary>🗂️ Open File Coverage Breakdown</summary>\n\n---\n\n';
       
       // Newly Added Files section
-      if (fileCoverage.newFiles.length > 0) {
+      if (allNewFiles.length > 0) {
         fileDetailsSection += '#### 🆕 Newly Added Files:\n';
         fileDetailsSection += '| File              | Branches | Funcs | Lines | Uncovered Lines |\n';
         fileDetailsSection += '|--------------------|----------|-------|-------|-----------------|';
         
-        fileCoverage.newFiles.forEach(file => {
-          const uncoveredLinesText = file.uncoveredLines.length > 0
+        allNewFiles.forEach((file: any) => {
+          const uncoveredLinesText = file.uncoveredLines?.length > 0
             ? formatUncoveredLines(file.uncoveredLines, file.file, prInfo)
             : '-';
           
-          // Extract just the filename from the path
           const fileName = file.file.split('/').pop() || file.file;
-          
-          // Generate GitHub PR link if PR info is available
           const fileLink = prInfo
             ? `https://github.com/${prInfo.owner}/${prInfo.repo}/pull/${prInfo.prNumber}/files`
             : file.file;
@@ -59,20 +60,17 @@ export function formatCoverageMarkdown(
       }
       
       // Modified Files section
-      if (fileCoverage.modifiedFiles.length > 0) {
+      if (allModifiedFiles.length > 0) {
         fileDetailsSection += '#### ✏️ Modified Files:\n';
         fileDetailsSection += '| File               | Branches | Funcs | Lines | Uncovered Lines |\n';
         fileDetailsSection += '|---------------------|----------|-------|-------|-----------------|';
         
-        fileCoverage.modifiedFiles.forEach(file => {
-          const uncoveredLinesText = file.uncoveredLines.length > 0
+        allModifiedFiles.forEach((file: any) => {
+          const uncoveredLinesText = file.uncoveredLines?.length > 0
             ? formatUncoveredLines(file.uncoveredLines, file.file, prInfo)
             : '-';
           
-          // Extract just the filename from the path
           const fileName = file.file.split('/').pop() || file.file;
-          
-          // Generate GitHub PR link if PR info is available
           const fileLink = prInfo
             ? `https://github.com/${prInfo.owner}/${prInfo.repo}/pull/${prInfo.prNumber}/files`
             : file.file;
@@ -113,7 +111,12 @@ export function formatCoverageMarkdown(
       testFailuresSection += '</details>\n\n---';
     }
 
-    return `${mainTable}${fileDetailsSection}${testFailuresSection}`;
+    let errorNotice = '';
+    if (coverageError) {
+      errorNotice = '\n\n⚠️ **Warning:** Could not generate full coverage comparison due to missing coverage data';
+    }
+    
+    return `${mainTable}${errorNotice}${fileDetailsSection}${testFailuresSection}`;
   }
 
 // Helper function to format uncovered lines with ranges
@@ -138,10 +141,8 @@ function formatUncoveredLines(
   
   for (let i = 1; i < lines.length; i++) {
     if (lines[i] === rangeEnd + 1) {
-      // Continue the current range
       rangeEnd = lines[i];
     } else {
-      // End the current range and start a new one
       if (rangeStart === rangeEnd) {
         ranges.push(`${rangeStart}`);
       } else {
@@ -160,7 +161,6 @@ function formatUncoveredLines(
   
   // Create a clickable link with the ranges
   if (prInfo) {
-    // Use GitHub PR files link without the complex diff hash
     return `[${ranges.join(', ')}](https://github.com/${prInfo.owner}/${prInfo.repo}/pull/${prInfo.prNumber}/files)`;
   } else {
     return `[${ranges.join(', ')}](${file})`;
