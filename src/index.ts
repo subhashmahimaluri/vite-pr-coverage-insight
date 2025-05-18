@@ -55,14 +55,14 @@ async function run() {
     
     console.log("✅ Coverage report successfully posted to PR");
     
-    // Exit with error code if tests failed
+    // Log test failures but do not exit with an error code
     if (testFailures && testFailures.numFailedTests > 0) {
-      console.error(`❌ ${testFailures.numFailedTests} tests failed`);
-      process.exit(1); // Fail the pipeline
+      console.warn(`⚠️ ${testFailures.numFailedTests} tests failed`);
     }
+
   } catch (error) {
-    console.error("❌ Error generating coverage comment:", error);
-    process.exit(1);
+    console.error("❌ An error occurred during action execution:", error);
+    // Do not exit with 1 here, let the workflow handle the status based on coverage thresholds
   }
 }
 

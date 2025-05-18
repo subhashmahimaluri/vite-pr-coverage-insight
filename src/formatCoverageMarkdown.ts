@@ -12,8 +12,8 @@ import { TestFailuresResult } from './utils/parseTestFailures';
  * @returns Formatted markdown string with summary table and file breakdown
  */
 export function generateCoverageReport(
-  base: CoverageSummary,
-  pr: CoverageSummary,
+  base: CoverageSummary | null,
+  pr: CoverageSummary | null,
   testFailures?: TestFailuresResult | null,
   prInfo?: {
     owner: string;
@@ -21,14 +21,41 @@ export function generateCoverageReport(
     prNumber: number;
   }
 ): string {
-  // Compare overall metrics
-  const summaryRows = compareCoverage(base, pr);
-  
-  // Compare file-level metrics
-  const fileCoverage = compareFileCoverage(base, pr);
+  let summaryRows: any[] = [];
+  let fileCoverage: FileCoverageResult[] = [];
+  let coverageError = false;
+
+  if (base && pr) {
+    // Compare overall metrics
+    summaryRows = compareCoverage(base, pr);
+    
+    // Compare file-level metrics (wrap single result in array)
+    fileCoverage = [compareFileCoverage(base, pr)];
+  } else {
+    coverageError = true;
+    // If PR coverage is missing, show base coverage if available
+    if (base) {
+      summaryRows = Object.entries(base.total).map(([metric, data]) => ({
+        metric,
+        base: data.pct,
+        pr: 'N/A',
+        delta: 'N/A',
+        deltaIcon: ''
+      }));
+    } else {
+      // If both are missing, indicate no coverage data
+      summaryRows = [{
+        metric: 'Coverage Data',
+        base: 'N/A',
+        pr: 'N/A',
+        delta: 'N/A',
+        deltaIcon: ''
+      }];
+    }
+  }
   
   // Format the markdown report
-  return formatCoverageMarkdown(summaryRows, fileCoverage, prInfo, testFailures);
+  return formatCoverageMarkdown(summaryRows, fileCoverage, prInfo, testFailures, coverageError);
 }
 
 // Re-export the utility functions
