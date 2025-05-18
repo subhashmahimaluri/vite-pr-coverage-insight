@@ -16,18 +16,16 @@
 #### 🆕 Newly Added Files:
 | File              | Branches | Funcs | Lines | Uncovered Lines |
 |--------------------|----------|-------|-------|-----------------|
-| [NewComponent.js](link)   | 100%     | 100%  | 100%  | - |
+| [NewComponent.js](https://github.com/example-owner/example-repo/pull/30/files)   | 100%     | 100%  | 100%  | - |
 
 ---
 
 #### ✏️ Modified Files:
 | File               | Branches | Funcs | Lines | Uncovered Lines |
 |---------------------|----------|-------|-------|-----------------|
-| [Button.js](link)    | 65%     | 70%    | 80%    | [5, 10, 15](link) |
-| [Input.js](link)    | 70%     | 75%    | 85%    | [8, 12](link) |
+| [Button.js](https://github.com/example-owner/example-repo/pull/30/files)    | 65%     | 70%    | 80%    | [5, 10, 15](https://github.com/example-owner/example-repo/pull/30/files) |
+| [Input.js](https://github.com/example-owner/example-repo/pull/30/files)    | 70%     | 75%    | 85%    | [8, 12](https://github.com/example-owner/example-repo/pull/30/files) |
 
 </details>
 
 ---
-
-_Reported by **vite-pr-coverage-insight**_

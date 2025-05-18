@@ -25,14 +25,14 @@ async function run() {
     const base: CoverageSummary = JSON.parse(baseJson);
     const pr: CoverageSummary = JSON.parse(headJson);
 
-    // Generate the markdown report
-    const markdown = generateCoverageReport(base, pr);
-
     // Get PR information
     const { owner, repo } = context.repo;
     const prNumber = context.payload.pull_request?.number;
 
     if (!prNumber) throw new Error("Pull request number not found");
+
+    // Generate the markdown report with PR information
+    const markdown = generateCoverageReport(base, pr, { owner, repo, prNumber });
 
     // Post the report to the PR
     await postCoverageReport({

@@ -8,7 +8,12 @@ export function formatCoverageMarkdown(
       delta: number;
       symbol: string;
     }[],
-    fileCoverage: FileCoverageResult
+    fileCoverage: FileCoverageResult,
+    prInfo?: {
+      owner: string;
+      repo: string;
+      prNumber: number;
+    }
   ) {
     // Format the main summary table
     const header = `### 📊 Vite Coverage Report\n\n| Metric     | Base     | PR       | ∆        |\n|------------|----------|----------|----------|`;
@@ -34,13 +39,18 @@ export function formatCoverageMarkdown(
         
         fileCoverage.newFiles.forEach(file => {
           const uncoveredLinesText = file.uncoveredLines.length > 0
-            ? formatUncoveredLines(file.uncoveredLines, file.file)
+            ? formatUncoveredLines(file.uncoveredLines, file.file, prInfo)
             : '-';
           
           // Extract just the filename from the path
           const fileName = file.file.split('/').pop() || file.file;
           
-          fileDetailsSection += `\n| [${fileName}](link)   | ${file.metrics.branches.toFixed(0)}%     | ${file.metrics.functions.toFixed(0)}%  | ${file.metrics.lines.toFixed(0)}%  | ${uncoveredLinesText} |`;
+          // Generate GitHub PR link if PR info is available
+          const fileLink = prInfo
+            ? `https://github.com/${prInfo.owner}/${prInfo.repo}/pull/${prInfo.prNumber}/files`
+            : file.file;
+            
+          fileDetailsSection += `\n| [${fileName}](${fileLink})   | ${file.metrics.branches.toFixed(0)}%     | ${file.metrics.functions.toFixed(0)}%  | ${file.metrics.lines.toFixed(0)}%  | ${uncoveredLinesText} |`;
         });
         
         fileDetailsSection += '\n\n---\n\n';
@@ -54,24 +64,37 @@ export function formatCoverageMarkdown(
         
         fileCoverage.modifiedFiles.forEach(file => {
           const uncoveredLinesText = file.uncoveredLines.length > 0
-            ? formatUncoveredLines(file.uncoveredLines, file.file)
+            ? formatUncoveredLines(file.uncoveredLines, file.file, prInfo)
             : '-';
           
           // Extract just the filename from the path
           const fileName = file.file.split('/').pop() || file.file;
           
-          fileDetailsSection += `\n| [${fileName}](link)    | ${file.metrics.branches.pr.toFixed(0)}%     | ${file.metrics.functions.pr.toFixed(0)}%    | ${file.metrics.lines.pr.toFixed(0)}%    | ${uncoveredLinesText} |`;
+          // Generate GitHub PR link if PR info is available
+          const fileLink = prInfo
+            ? `https://github.com/${prInfo.owner}/${prInfo.repo}/pull/${prInfo.prNumber}/files`
+            : file.file;
+            
+          fileDetailsSection += `\n| [${fileName}](${fileLink})    | ${file.metrics.branches.pr.toFixed(0)}%     | ${file.metrics.functions.pr.toFixed(0)}%    | ${file.metrics.lines.pr.toFixed(0)}%    | ${uncoveredLinesText} |`;
         });
       }
       
       fileDetailsSection += '\n\n</details>\n\n---';
     }
 
-    return `${mainTable}${fileDetailsSection}\n\n_Reported by **vite-pr-coverage-insight**_`;
+    return `${mainTable}${fileDetailsSection}`;
   }
 
 // Helper function to format uncovered lines with ranges
-function formatUncoveredLines(lines: number[], file: string): string {
+function formatUncoveredLines(
+  lines: number[],
+  file: string,
+  prInfo?: {
+    owner: string;
+    repo: string;
+    prNumber: number;
+  }
+): string {
   if (lines.length === 0) return '-';
   
   // Sort lines numerically
@@ -105,5 +128,10 @@ function formatUncoveredLines(lines: number[], file: string): string {
   }
   
   // Create a clickable link with the ranges
-  return `[${ranges.join(', ')}](link)`;
+  if (prInfo) {
+    // Use GitHub PR files link without the complex diff hash
+    return `[${ranges.join(', ')}](https://github.com/${prInfo.owner}/${prInfo.repo}/pull/${prInfo.prNumber}/files)`;
+  } else {
+    return `[${ranges.join(', ')}](${file})`;
+  }
 }

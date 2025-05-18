@@ -8,7 +8,15 @@ import { formatCoverageMarkdown } from './utils/formatMarkdown';
  * @param pr The PR branch coverage data
  * @returns Formatted markdown string with summary table and file breakdown
  */
-export function generateCoverageReport(base: CoverageSummary, pr: CoverageSummary): string {
+export function generateCoverageReport(
+  base: CoverageSummary,
+  pr: CoverageSummary,
+  prInfo?: {
+    owner: string;
+    repo: string;
+    prNumber: number;
+  }
+): string {
   // Compare overall metrics
   const summaryRows = compareCoverage(base, pr);
   
@@ -16,7 +24,7 @@ export function generateCoverageReport(base: CoverageSummary, pr: CoverageSummar
   const fileCoverage = compareFileCoverage(base, pr);
   
   // Format the markdown report
-  return formatCoverageMarkdown(summaryRows, fileCoverage);
+  return formatCoverageMarkdown(summaryRows, fileCoverage, prInfo);
 }
 
 // Re-export the utility functions

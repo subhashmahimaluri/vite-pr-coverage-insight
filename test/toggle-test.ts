@@ -82,8 +82,15 @@ const prCoverage: CoverageSummary = {
 const rows = compareCoverage(baseCoverage, prCoverage);
 const fileCoverage = compareFileCoverage(baseCoverage, prCoverage);
 
-// Generate markdown
-const markdown = formatCoverageMarkdown(rows, fileCoverage);
+// Mock PR information for testing
+const mockPrInfo = {
+  owner: 'example-owner',
+  repo: 'example-repo',
+  prNumber: 30
+};
+
+// Generate markdown with PR info
+const markdown = formatCoverageMarkdown(rows, fileCoverage, mockPrInfo);
 
 // Write the markdown to a file for inspection
 fs.writeFileSync(path.join(__dirname, 'toggle-output.md'), markdown);
