@@ -19,11 +19,12 @@ export function generateCoverageReport(
     owner: string;
     repo: string;
     prNumber: number;
-  }
+  },
+  coverageError?: boolean
 ): string {
   let summaryRows: any[] = [];
   let fileCoverage: FileCoverageResult[] = [];
-  let coverageError = false;
+  coverageError = coverageError || false;
 
   if (base && pr) {
     // Compare overall metrics

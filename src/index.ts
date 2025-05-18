@@ -24,8 +24,13 @@ async function run() {
     const baseJson = fs.readFileSync(path.resolve(basePath), "utf-8");
     const headJson = fs.readFileSync(path.resolve(headPath), "utf-8");
 
-    const base: CoverageSummary = JSON.parse(baseJson);
-    const pr: CoverageSummary = JSON.parse(headJson);
+    const base: CoverageSummary = JSON.parse(baseJson) || {};
+    const pr: CoverageSummary = JSON.parse(headJson) || {};
+    
+    // Ensure coverage data exists
+    if (!base.total || !pr.total) {
+      throw new Error("Invalid coverage data - missing 'total' field");
+    }
 
     // Parse test failures if provided
     let testFailures: TestFailuresResult | null = null;
@@ -40,7 +45,7 @@ async function run() {
     if (!prNumber) throw new Error("Pull request number not found");
 
     // Generate the markdown report with PR information and test failures
-    const markdown = generateCoverageReport(base, pr, testFailures, { owner, repo, prNumber });
+    const markdown = generateCoverageReport(base, pr, testFailures, { owner, repo, prNumber }, !base.total || !pr.total);
 
     // Post the report to the PR
     await postCoverageReport({
