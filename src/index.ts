@@ -27,22 +27,37 @@ async function run() {
     const base: CoverageSummary = JSON.parse(baseJson) || {};
     const pr: CoverageSummary = JSON.parse(headJson) || {};
     
-    // Ensure coverage data exists
-    if (!base.total || !pr.total) {
-      throw new Error("Invalid coverage data - missing 'total' field");
-    }
-
     // Parse test failures if provided
     let testFailures: TestFailuresResult | null = null;
     if (testFailuresPath) {
       testFailures = parseTestFailures(path.resolve(testFailuresPath));
     }
-
+    
     // Get PR information
     const { owner, repo } = context.repo;
     const prNumber = context.payload.pull_request?.number;
 
     if (!prNumber) throw new Error("Pull request number not found");
+
+    // Handle missing coverage data
+    if (!base.total || !pr.total) {
+      const markdown = `## ❌ Coverage Report Error\n\n` +
+        `Invalid coverage data - missing 'total' field\n\n` +
+        `Base coverage: ${base ? 'exists' : 'missing'}\n` +
+        `PR coverage: ${pr ? 'exists' : 'missing'}`;
+        
+      await postCoverageReport({
+        token: githubToken,
+        owner,
+        repo,
+        prNumber,
+        markdown,
+        testFailures,
+        useCheckRun
+      });
+      return;
+    }
+
 
     // Generate the markdown report with PR information and test failures
     const markdown = generateCoverageReport(base, pr, testFailures, { owner, repo, prNumber }, !base.total || !pr.total);
