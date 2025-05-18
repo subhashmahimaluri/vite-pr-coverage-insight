@@ -1,16 +1,20 @@
 import { CoverageSummary, FileCoverageResult, compareCoverage, compareFileCoverage } from './utils/compareCoverage';
 import { formatCoverageMarkdown } from './utils/formatMarkdown';
+import { TestFailuresResult } from './utils/parseTestFailures';
 
 /**
  * Generates a markdown report comparing coverage between base and PR branches
- * 
+ *
  * @param base The base branch coverage data
  * @param pr The PR branch coverage data
+ * @param testFailures Optional test failures data
+ * @param prInfo Optional PR information
  * @returns Formatted markdown string with summary table and file breakdown
  */
 export function generateCoverageReport(
   base: CoverageSummary,
   pr: CoverageSummary,
+  testFailures?: TestFailuresResult | null,
   prInfo?: {
     owner: string;
     repo: string;
@@ -24,7 +28,7 @@ export function generateCoverageReport(
   const fileCoverage = compareFileCoverage(base, pr);
   
   // Format the markdown report
-  return formatCoverageMarkdown(summaryRows, fileCoverage, prInfo);
+  return formatCoverageMarkdown(summaryRows, fileCoverage, prInfo, testFailures);
 }
 
 // Re-export the utility functions

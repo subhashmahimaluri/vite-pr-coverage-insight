@@ -29,3 +29,26 @@
 </details>
 
 ---
+
+---
+
+<details><summary>❌ Failed Tests (3/50)</summary>
+
+
+### 📄 Button.test.js
+
+- should render component correctly
+
+
+### 📄 Input.test.js
+
+- should handle click events
+
+
+### 📄 Form.test.js
+
+- should validate form input
+
+</details>
+
+---

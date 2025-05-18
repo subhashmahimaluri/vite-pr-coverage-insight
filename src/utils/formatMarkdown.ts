@@ -1,4 +1,5 @@
 import { FileCoverageResult } from './compareCoverage';
+import { TestFailuresResult } from './parseTestFailures';
 
 export function formatCoverageMarkdown(
     rows: {
@@ -13,7 +14,8 @@ export function formatCoverageMarkdown(
       owner: string;
       repo: string;
       prNumber: number;
-    }
+    },
+    testFailures?: TestFailuresResult | null
   ) {
     // Format the main summary table
     const header = `### 📊 Vite Coverage Report\n\n| Metric     | Base     | PR       | ∆        |\n|------------|----------|----------|----------|`;
@@ -81,8 +83,37 @@ export function formatCoverageMarkdown(
       
       fileDetailsSection += '\n\n</details>\n\n---';
     }
+    
+    // Add test failures section if available
+    let testFailuresSection = '';
+    if (testFailures && testFailures.numFailedTests > 0) {
+      testFailuresSection = `\n\n---\n\n<details><summary>❌ Failed Tests (${testFailures.numFailedTests}/${testFailures.numTotalTests})</summary>\n\n`;
+      
+      // Group failures by file
+      const failuresByFile: Record<string, string[]> = {};
+      testFailures.failedTests.forEach(failure => {
+        if (!failuresByFile[failure.filePath]) {
+          failuresByFile[failure.filePath] = [];
+        }
+        failuresByFile[failure.filePath].push(failure.testName);
+      });
+      
+      // Format each file's failures
+      Object.entries(failuresByFile).forEach(([filePath, testNames]) => {
+        const fileName = filePath.split('/').pop() || filePath;
+        testFailuresSection += `\n### 📄 ${fileName}\n\n`;
+        
+        testNames.forEach(testName => {
+          testFailuresSection += `- ${testName}\n`;
+        });
+        
+        testFailuresSection += '\n';
+      });
+      
+      testFailuresSection += '</details>\n\n---';
+    }
 
-    return `${mainTable}${fileDetailsSection}`;
+    return `${mainTable}${fileDetailsSection}${testFailuresSection}`;
   }
 
 // Helper function to format uncovered lines with ranges

@@ -1,0 +1,18 @@
+{
+  "numFailedTests": 3,
+  "numTotalTests": 50,
+  "failedTests": [
+    {
+      "testName": "should render component correctly",
+      "filePath": "src/components/Button.test.js"
+    },
+    {
+      "testName": "should handle click events",
+      "filePath": "src/components/Input.test.js"
+    },
+    {
+      "testName": "should validate form input",
+      "filePath": "src/components/Form.test.js"
+    }
+  ]
+}

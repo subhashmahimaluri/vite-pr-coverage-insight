@@ -10,6 +10,13 @@ inputs:
   head:
     required: true
     description: 'Path to PR coverage-summary.json'
+  test-failures:
+    required: false
+    description: 'Path to test failures JSON file'
+  use-check-run:
+    required: false
+    description: 'Whether to use GitHub Check Run API'
+    default: 'false'
 runs:
   using: 'node16'
   main: 'dist/index.js'

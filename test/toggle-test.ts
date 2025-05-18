@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { compareCoverage, compareFileCoverage, CoverageSummary } from '../src/utils/compareCoverage';
 import { formatCoverageMarkdown } from '../src/utils/formatMarkdown';
+import { parseTestFailures } from '../src/utils/parseTestFailures';
 
 // Sample coverage data with required fields
 const baseCoverage: CoverageSummary = {
@@ -89,8 +90,12 @@ const mockPrInfo = {
   prNumber: 30
 };
 
-// Generate markdown with PR info
-const markdown = formatCoverageMarkdown(rows, fileCoverage, mockPrInfo);
+// Read test failures JSON file
+const testFailuresPath = path.join(__dirname, 'test-failures.json');
+const testFailures = parseTestFailures(testFailuresPath);
+
+// Generate markdown with PR info and test failures
+const markdown = formatCoverageMarkdown(rows, fileCoverage, mockPrInfo, testFailures);
 
 // Write the markdown to a file for inspection
 fs.writeFileSync(path.join(__dirname, 'toggle-output.md'), markdown);
@@ -99,4 +104,6 @@ console.log('Overall coverage comparison:');
 console.log(rows);
 console.log('\nFile-level coverage changes:');
 console.log(JSON.stringify(fileCoverage, null, 2));
+console.log('\nTest failures:');
+console.log(JSON.stringify(testFailures, null, 2));
 console.log('\nMarkdown output written to test/toggle-output.md');
