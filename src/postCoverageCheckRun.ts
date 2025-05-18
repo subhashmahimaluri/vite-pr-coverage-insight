@@ -38,25 +38,31 @@ export async function postCoverageReport({
 
   // Optionally post as a check run
   if (useCheckRun) {
-    // Determine conclusion based on coverage and test failures
-    let conclusion: "success" | "failure" | "neutral" = "success";
-    
-    // If coverage decreased, set to neutral
-    if (markdown.includes("⬇️")) {
-      conclusion = "neutral";
+    try {
+      // Determine conclusion based on coverage and test failures
+      let conclusion: "success" | "failure" | "neutral" = "success";
+      
+      // If coverage decreased, set to neutral
+      if (markdown.includes("⬇️")) {
+        conclusion = "neutral";
+      }
+      
+      // If tests failed, set to failure
+      if (testFailures && testFailures.numFailedTests > 0) {
+        conclusion = "failure";
+      }
+      
+      await postCoverageCheckRun({
+        token,
+        title: "Coverage Report",
+        summary: markdown,
+        conclusion,
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn('⚠️ Failed to create check run:', message);
+      console.warn('⚠️ Falling back to PR comment only');
     }
-    
-    // If tests failed, set to failure
-    if (testFailures && testFailures.numFailedTests > 0) {
-      conclusion = "failure";
-    }
-    
-    await postCoverageCheckRun({
-      token,
-      title: "Coverage Report",
-      summary: markdown,
-      conclusion,
-    });
   }
 }
 
