@@ -3,108 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coverage Toggle Preview</title>
+    <title>Coverage Report Preview</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-            line-height: 1.5;
+            line-height: 1.6;
             color: #24292e;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
         }
-        h3 {
-            margin-top: 24px;
-            margin-bottom: 16px;
-            font-weight: 600;
-        }
-        h4 {
-            margin-top: 24px;
-            margin-bottom: 16px;
-            font-weight: 600;
-        }
         table {
             border-collapse: collapse;
             width: 100%;
-            margin-bottom: 16px;
+            margin: 20px 0;
         }
         th, td {
+            border: 1px solid #dfe2e5;
             padding: 8px 12px;
-            border: 1px solid #e1e4e8;
             text-align: left;
         }
         th {
             background-color: #f6f8fa;
-            font-weight: 600;
+        }
+        h3, h4 {
+            margin-top: 24px;
+            margin-bottom: 16px;
         }
         details {
-            margin: 16px 0;
-            padding: 8px 16px;
-            background-color: #f6f8fa;
-            border: 1px solid #e1e4e8;
-            border-radius: 6px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-        details:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #dfe2e5;
+            border-radius: 3px;
         }
         summary {
             cursor: pointer;
-            font-weight: 600;
-            padding: 12px 0;
-            display: flex;
-            align-items: center;
-            transition: all 0.2s ease;
+            font-weight: bold;
         }
-        summary::before {
-            content: '📂';
-            margin-right: 8px;
-            font-size: 1.2em;
-        }
-        details[open] summary::before {
-            content: '📂';
-            transform: rotate(0deg);
-        }
-        summary:hover {
+        a {
             color: #0366d6;
+            text-decoration: none;
         }
-        .improved {
-            background-color: #e6ffed;
-            padding: 16px;
-            border: 1px solid #34d058;
-            border-radius: 8px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        a:hover {
+            text-decoration: underline;
         }
-        .decreased {
-            background-color: #fff8f7;
-            padding: 16px;
-            border: 1px solid #d73a49;
-            border-radius: 8px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        h4 {
-            display: flex;
-            align-items: center;
-            font-size: 1.2em;
-        }
-        h4::before {
-            margin-right: 8px;
-            font-size: 1.3em;
-        }
-        .improved h4::before {
-            content: '🚀';
-        }
-        .decreased h4::before {
-            content: '🔍';
+        hr {
+            height: 0.25em;
+            padding: 0;
+            margin: 24px 0;
+            background-color: #e1e4e8;
+            border: 0;
         }
     </style>
 </head>
 <body>
     <h3>📊 Vite Coverage Report</h3>
-    <div class="report-container">
     
     <table>
         <thead>
@@ -120,194 +73,92 @@
                 <td>statements</td>
                 <td>75.00%</td>
                 <td>80.00%</td>
-                <td>+5.00% 🟢</td>
+                <td>+5.00% ⬆️</td>
             </tr>
             <tr>
                 <td>branches</td>
                 <td>65.00%</td>
                 <td>70.00%</td>
-                <td>+5.00% 🟢</td>
+                <td>+5.00% ⬆️</td>
             </tr>
             <tr>
                 <td>functions</td>
                 <td>70.00%</td>
                 <td>75.00%</td>
-                <td>+5.00% 🟢</td>
+                <td>+5.00% ⬆️</td>
             </tr>
             <tr>
                 <td>lines</td>
                 <td>80.00%</td>
                 <td>85.00%</td>
-                <td>+5.00% 🟢</td>
+                <td>+5.00% ⬆️</td>
             </tr>
         </tbody>
     </table>
     
+    <hr>
+    
     <details>
-        <summary>📂 Show file-level coverage details</summary>
+        <summary>🗂️ Open File Coverage Breakdown</summary>
         
-        <div class="improved">
-            <h4>🚀 Improved Coverage</h4>
-            
-            <p><strong>src/components/Button.js</strong></p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Metric</th>
-                        <th>Base</th>
-                        <th>PR</th>
-                        <th>∆</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>statements</td>
-                        <td>65.00%</td>
-                        <td>75.00%</td>
-                        <td>+10.00% 🟢</td>
-                    </tr>
-                    <tr>
-                        <td>branches</td>
-                        <td>55.00%</td>
-                        <td>65.00%</td>
-                        <td>+10.00% 🟢</td>
-                    </tr>
-                    <tr>
-                        <td>functions</td>
-                        <td>60.00%</td>
-                        <td>70.00%</td>
-                        <td>+10.00% 🟢</td>
-                    </tr>
-                    <tr>
-                        <td>lines</td>
-                        <td>70.00%</td>
-                        <td>80.00%</td>
-                        <td>+10.00% 🟢</td>
-                    </tr>
-                </tbody>
-            </table>
-            
-            <p><strong>src/components/NewComponent.js</strong></p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Metric</th>
-                        <th>Base</th>
-                        <th>PR</th>
-                        <th>∆</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>statements</td>
-                        <td>0.00%</td>
-                        <td>90.00%</td>
-                        <td>+90.00% 🟢</td>
-                    </tr>
-                    <tr>
-                        <td>branches</td>
-                        <td>0.00%</td>
-                        <td>80.00%</td>
-                        <td>+80.00% 🟢</td>
-                    </tr>
-                    <tr>
-                        <td>functions</td>
-                        <td>0.00%</td>
-                        <td>85.00%</td>
-                        <td>+85.00% 🟢</td>
-                    </tr>
-                    <tr>
-                        <td>lines</td>
-                        <td>0.00%</td>
-                        <td>95.00%</td>
-                        <td>+95.00% 🟢</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <hr>
         
-        <div class="decreased">
-            <h4>🔍 Decreased Coverage</h4>
-            
-            <p><strong>src/components/Input.js</strong></p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Metric</th>
-                        <th>Base</th>
-                        <th>PR</th>
-                        <th>∆</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>statements</td>
-                        <td>85.00%</td>
-                        <td>80.00%</td>
-                        <td>-5.00% 🔴</td>
-                    </tr>
-                    <tr>
-                        <td>branches</td>
-                        <td>75.00%</td>
-                        <td>70.00%</td>
-                        <td>-5.00% 🔴</td>
-                    </tr>
-                    <tr>
-                        <td>functions</td>
-                        <td>80.00%</td>
-                        <td>75.00%</td>
-                        <td>-5.00% 🔴</td>
-                    </tr>
-                    <tr>
-                        <td>lines</td>
-                        <td>90.00%</td>
-                        <td>85.00%</td>
-                        <td>-5.00% 🔴</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <h4>🆕 Newly Added Files:</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Branches</th>
+                    <th>Funcs</th>
+                    <th>Lines</th>
+                    <th>Uncovered Lines</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><a href="#">NewComponent.js</a></td>
+                    <td>100%</td>
+                    <td>100%</td>
+                    <td>100%</td>
+                    <td>-</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <hr>
+        
+        <h4>✏️ Modified Files:</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Branches</th>
+                    <th>Funcs</th>
+                    <th>Lines</th>
+                    <th>Uncovered Lines</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><a href="#">Button.js</a></td>
+                    <td>65%</td>
+                    <td>70%</td>
+                    <td>80%</td>
+                    <td><a href="#">5, 10, 15</a></td>
+                </tr>
+                <tr>
+                    <td><a href="#">Input.js</a></td>
+                    <td>70%</td>
+                    <td>75%</td>
+                    <td>85%</td>
+                    <td><a href="#">8, 12</a></td>
+                </tr>
+            </tbody>
+        </table>
     </details>
-    </div>
-
-    <style>
-        .report-container {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            padding: 24px;
-            margin-top: 20px;
-        }
-        
-        table {
-            border-collapse: separate;
-            border-spacing: 0;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        
-        th {
-            background-color: #f0f4f8;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85em;
-            letter-spacing: 0.5px;
-        }
-        
-        th, td {
-            padding: 12px 16px;
-            border: none;
-            border-bottom: 1px solid #e1e4e8;
-        }
-        
-        tr:last-child td {
-            border-bottom: none;
-        }
-        
-        tr:hover td {
-            background-color: #f8fafc;
-        }
-    </style>
+    
+    <hr>
+    
+    <p><em>Reported by <strong>vite-pr-coverage-insight</strong></em></p>
 </body>
 </html>

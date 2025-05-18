@@ -1,5 +1,8 @@
 import { getOctokit, context } from "@actions/github";
 
+/**
+ * Posts a coverage report as a GitHub check run
+ */
 export async function postCoverageCheckRun({
   token,
   title,
