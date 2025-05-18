@@ -87,28 +87,17 @@ export function formatCoverageMarkdown(
     if (testFailures && testFailures.numFailedTests > 0) {
       testFailuresSection = `\n\n---\n\n<details><summary>❌ Failed Tests (${testFailures.numFailedTests}/${testFailures.numTotalTests})</summary>\n\n`;
       
-      // Group failures by file
-      const failuresByFile: Record<string, string[]> = {};
+      // Create table header
+      testFailuresSection += '| Test File | Failed Test Case |\n';
+      testFailuresSection += '|-----------|------------------|';
+      
+      // Format each failure as a table row
       testFailures.failedTests.forEach(failure => {
-        if (!failuresByFile[failure.filePath]) {
-          failuresByFile[failure.filePath] = [];
-        }
-        failuresByFile[failure.filePath].push(failure.testName);
+        const fileName = failure.filePath.split('/').pop() || failure.filePath;
+        testFailuresSection += `\n| ${fileName} | ${failure.testName} |`;
       });
       
-      // Format each file's failures
-      Object.entries(failuresByFile).forEach(([filePath, testNames]) => {
-        const fileName = filePath.split('/').pop() || filePath;
-        testFailuresSection += `\n### 📄 ${fileName}\n\n`;
-        
-        testNames.forEach(testName => {
-          testFailuresSection += `- ${testName}\n`;
-        });
-        
-        testFailuresSection += '\n';
-      });
-      
-      testFailuresSection += '</details>\n\n---';
+      testFailuresSection += '\n\n</details>\n\n---';
     }
 
     let errorNotice = '';
