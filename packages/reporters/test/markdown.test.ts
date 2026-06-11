@@ -269,7 +269,7 @@ describe('visuals modes', () => {
     expect(md).toMatchSnapshot();
   });
 
-  it('no badge images: inline cards show the CURRENT PR values, never base', () => {
+  it('no badge images: open totals table, no picture, no inline-card duplication', () => {
     const md = renderMarkdown(
       report({
         history: [
@@ -277,16 +277,12 @@ describe('visuals modes', () => {
           { sha: 'b2', lines: 85 },
         ],
       })
-      // no visuals/badgeImages — e.g. missing contents: write
+      // no visuals/badgeImages — e.g. text mode or no history
     );
     expect(md).not.toContain('<picture>');
-    const cards = md.split('| Statements | Branches | Functions | Lines |')[1].split('\n\n')[0];
-    expect(cards).toContain('**90.0%**'); // head value, not the 80% base
-    expect(cards).toContain('▲'); // delta vs base
-    expect(cards).toContain('9/10 covered');
-    expect(cards).toContain('<sub>▁'); // sparkline row
-    // detailed tables still collapse behind the spoiler
-    expect(md).toContain('<summary>📊 Coverage report — this PR vs base branch</summary>');
+    // without the band the PR totals table stays open (it IS the summary)
+    expect(md).toContain('| St. | Category | Percentage | Covered / Total |');
+    expect(md).not.toContain('📊 Coverage report — this PR vs base branch');
   });
 
   it('mermaid: chart but no picture (private-repo auto fallback)', () => {
