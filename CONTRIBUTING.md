@@ -66,5 +66,6 @@ Every PR needs:
 
 Versioning is automated with [changesets](https://github.com/changesets/changesets):
 each merged PR carries a changeset; the release workflow on `main` opens a
-"Version Packages" PR that bumps versions and changelogs. Merging that PR tags
-the release.
+"Version Packages" PR that bumps versions and changelogs. Publishing to npm and
+tagging the marketplace action (`v1.x` git tags) are still manual and will be
+automated in a later stage.

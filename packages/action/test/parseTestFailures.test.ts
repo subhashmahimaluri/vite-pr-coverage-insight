@@ -31,6 +31,10 @@ describe('parseTestFailures', () => {
     const corrupt = path.join(os.tmpdir(), 'corrupt-failures.json');
     fs.writeFileSync(corrupt, '{not json');
 
-    expect(parseTestFailures(corrupt)).toBeNull();
+    try {
+      expect(parseTestFailures(corrupt)).toBeNull();
+    } finally {
+      fs.rmSync(corrupt, { force: true });
+    }
   });
 });

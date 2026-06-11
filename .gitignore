@@ -1,4 +1,5 @@
 node_modules/
+coverage/
 
 # workspace build output is never committed
 packages/*/dist/

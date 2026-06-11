@@ -4,7 +4,7 @@
  * Example script to extract test failures from test results
  * This is a simple example that can be adapted to different test runners
  *
- * Usage: node scripts/extract-test-failures.js > test-failures.json
+ * Usage: node examples/extract-test-failures.js > test-failures.json
  *
  * Note: This is just an example. You'll need to adapt this to your specific test runner
  * and test result format.
