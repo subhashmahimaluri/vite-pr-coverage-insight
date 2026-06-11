@@ -52,6 +52,12 @@ export type BuildReportInput = {
   history?: HistoryPoint[];
   /** repo-relative paths changed in the PR's git diff — marks FileReport.touched */
   touchedFiles?: string[];
+  /** policy context for the header line, e.g. {description: 'min 90% · ratchet', source: 'coverage-insight.config.json'} */
+  policyMeta?: {
+    description: string;
+    source?: string;
+    thresholds?: Partial<Record<MetricKey, number>>;
+  };
 };
 
 /** Rounds to 2 decimals (D7: same input ⇒ same output, no float drift). */
@@ -76,11 +82,15 @@ export function collapseUncoveredRanges(lines: number[]): { start: number; end: 
   return ranges;
 }
 
-function metricDelta(headPct: number, basePct: number | null): MetricDelta {
-  const head = round2(headPct);
-  if (basePct === null) return { base: null, head, delta: null };
+function metricDelta(
+  headMetric: { pct: number; covered: number; total: number },
+  basePct: number | null
+): MetricDelta {
+  const head = round2(headMetric.pct);
+  const counts = { covered: headMetric.covered, total: headMetric.total };
+  if (basePct === null) return { base: null, head, delta: null, ...counts };
   const base = round2(basePct);
-  return { base, head, delta: round2(head - base) };
+  return { base, head, delta: round2(head - base), ...counts };
 }
 
 function buildTotals(
@@ -89,7 +99,7 @@ function buildTotals(
 ): Record<MetricKey, MetricDelta> {
   const totals = {} as Record<MetricKey, MetricDelta>;
   for (const key of METRIC_KEYS) {
-    totals[key] = metricDelta(head.total[key].pct, base ? base.total[key].pct : null);
+    totals[key] = metricDelta(head.total[key], base ? base.total[key].pct : null);
   }
   return totals;
 }
@@ -119,10 +129,7 @@ function buildFiles(
     const baseFile = baseByPath.get(file.path);
     const metrics = {} as Record<MetricKey, MetricDelta>;
     for (const key of METRIC_KEYS) {
-      metrics[key] = metricDelta(
-        file.metrics[key].pct,
-        baseFile ? baseFile.metrics[key].pct : null
-      );
+      metrics[key] = metricDelta(file.metrics[key], baseFile ? baseFile.metrics[key].pct : null);
     }
     const uncoveredRanges = file.uncoveredLines?.length
       ? collapseUncoveredRanges(file.uncoveredLines)
@@ -204,6 +211,7 @@ export function buildReport(input: BuildReportInput): CoverageReport {
     totals,
     files,
     ...(input.policy ? { policy: input.policy } : {}),
+    ...(input.policyMeta ? { policyMeta: input.policyMeta } : {}),
     ...(input.testFailures !== undefined ? { testFailures: input.testFailures } : {}),
     ...(input.baseline !== undefined ? { baseline: input.baseline } : {}),
     ...(input.projects ? { projects: input.projects } : {}),

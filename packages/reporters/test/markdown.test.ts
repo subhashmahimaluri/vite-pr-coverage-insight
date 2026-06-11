@@ -79,7 +79,7 @@ describe('renderMarkdown states', () => {
     );
     expect(md).not.toContain('### Changed files');
     expect(md).not.toContain('Files changed in this PR');
-    expect(md).toContain('<summary>All files (2)</summary>');
+    expect(md).toContain('<summary>Full coverage table — 2 files</summary>');
   });
 
   it('changed-files table follows the PR diff when touched info exists', () => {

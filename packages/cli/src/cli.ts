@@ -106,10 +106,21 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
         const base = values.base ? readModel(values.base) : null;
         const loaded = await loadConfig(values.cwd ?? process.cwd());
         const policy = evaluatePolicy({ head, base, config: loaded.config });
+        const thresholds = Object.entries(loaded.config.thresholds ?? {});
         const report = buildReport({
           head,
           base,
           policy,
+          policyMeta: {
+            description:
+              thresholds.length > 0
+                ? `min ${thresholds.map(([m, pct]) => `${m} ${pct}%`).join(', ')}`
+                : 'report-only',
+            ...(loaded.source !== 'defaults'
+              ? { source: loaded.source.replace(/^file:/, '') }
+              : {}),
+            ...(loaded.config.thresholds ? { thresholds: loaded.config.thresholds } : {}),
+          },
           generatedAt: new Date().toISOString(),
         });
         const output =

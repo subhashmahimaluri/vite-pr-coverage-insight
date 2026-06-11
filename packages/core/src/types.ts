@@ -46,6 +46,8 @@ export type FileCoverageResult = {
 export type TestFailure = {
   testName: string;
   filePath: string;
+  /** optional error excerpt shown in the failed-suites section */
+  message?: string;
 };
 
 export type TestFailuresResult = {

@@ -92,7 +92,7 @@ describe('buildReport output', () => {
     });
     const a = report.files!.find((f) => f.path === 'src/a.ts')!;
     expect(a.change).toBe('modified');
-    expect(a.metrics.lines).toEqual({ base: 80, head: 90, delta: 10 });
+    expect(a.metrics.lines).toMatchObject({ base: 80, head: 90, delta: 10, covered: 9, total: 10 });
     const fresh = report.files!.find((f) => f.path === 'src/new.ts')!;
     expect(fresh.change).toBe('new');
     expect(fresh.metrics.lines.base).toBeNull();

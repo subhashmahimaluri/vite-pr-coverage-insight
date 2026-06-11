@@ -212,6 +212,9 @@ async function runReportMode(): Promise<void> {
         sha: point.sha,
         timestamp: point.timestamp,
         lines: point.metrics.lines,
+        statements: point.metrics.statements,
+        functions: point.metrics.functions,
+        branches: point.metrics.branches,
       }));
     }
   } catch {
@@ -246,6 +249,7 @@ async function runReportMode(): Promise<void> {
     head: head ?? { total: emptyTotals(), files: [] },
     base,
     policy,
+    policyMeta: describePolicy(config, loaded.source),
     testFailures,
     baseline,
     repo: { owner, repo },
@@ -305,6 +309,25 @@ async function runReportMode(): Promise<void> {
       `Coverage gate failed: ${policy.violations.length} violation(s) — see the PR comment`
     );
   }
+}
+
+/** header context, e.g. 'min lines 90% · ratchet' + the config source */
+function describePolicy(
+  config: Config,
+  source: string
+): { description: string; source?: string; thresholds?: Config['thresholds'] } {
+  const parts: string[] = [];
+  const thresholds = Object.entries(config.thresholds ?? {});
+  if (thresholds.length > 0) {
+    parts.push(`min ${thresholds.map(([metric, pct]) => `${metric} ${pct}%`).join(', ')}`);
+  }
+  if (config.ratchet) parts.push('ratchet');
+  if (parts.length === 0) parts.push('report-only');
+  return {
+    description: parts.join(' · '),
+    ...(source !== 'defaults' ? { source: source.replace(/^file:/, '') } : {}),
+    ...(config.thresholds ? { thresholds: config.thresholds } : {}),
+  };
 }
 
 function emptyTotals(): CoverageModel['total'] {

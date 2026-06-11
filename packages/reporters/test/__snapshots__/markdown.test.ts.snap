@@ -3,45 +3,61 @@
 exports[`renderMarkdown states > invalid-data: input, problem and fix 1`] = `
 "<!-- coverage-insight -->
 
-⚠️ Coverage report error
+## ⚠️ Coverage report error
 
-The coverage report could not be produced from the given inputs:
+_PR #42_
 
-- **\`head\`** — corrupt JSON
-  - Fix: check the artifact path"
+### What went wrong
+
+- **head** — corrupt JSON
+  - fix: check the artifact path
+
+---
+
+_coverage-insight v2 · one comment, updated in place on re-run_"
 `;
 
 exports[`renderMarkdown states > monorepo: per-project verdict rows 1`] = `
 "<!-- coverage-insight -->
 
-📦 Monorepo coverage
+## 📦 Monorepo coverage
 
-| Project | Verdict | Lines | Δ |
+_PR #42_
+
+### Projects
+
+| Project | Status | Lines | Δ |
 | --- | --- | ---: | ---: |
-| \`pkg-a\` | ✅ Coverage gate passed | 90.00% | +10.00 |
-| \`pkg-b\` | ❌ Coverage gate failed | 90.00% | +10.00 |
+| pkg-a | ✅ passed | 90.0% | +10.0 |
+| pkg-b | ❌ gate failed | 90.0% | +10.0 |
 
 <details>
 <summary>pkg-a — 0 files</summary>
 
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
+| File | Statements | Branches | Functions | Lines | Uncovered |
+| --- | ---: | ---: | ---: | ---: | --- |
 
 </details>
 
 <details>
 <summary>pkg-b — 0 files</summary>
 
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
+| File | Statements | Branches | Functions | Lines | Uncovered |
+| --- | ---: | ---: | ---: | ---: | --- |
 
-</details>"
+</details>
+
+---
+
+_coverage-insight v2 · one comment, updated in place on re-run_"
 `;
 
 exports[`renderMarkdown states > no-baseline: absolute numbers only 1`] = `
 "<!-- coverage-insight -->
 
-ℹ️ Baseline recorded
+## ℹ️ Baseline recorded
+
+_PR #42_
 
 _No baseline was found — absolute coverage only. Deltas will appear once the next baseline run records one._
 
@@ -49,19 +65,23 @@ _No baseline was found — absolute coverage only. Deltas will appear once the n
 
 | Metric | Coverage |
 | --- | ---: |
-| Statements | 90.00% |
-| Branches | 90.00% |
-| Functions | 90.00% |
-| Lines | 90.00% |
+| Statements | **90.0%** |
+| Branches | **90.0%** |
+| Functions | **90.0%** |
+| Lines | **90.0%** |
 
 <details>
-<summary>All files (1)</summary>
+<summary>Full coverage table — 1 file</summary>
 
 | File | Statements | Branches | Functions | Lines | Uncovered |
 | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | 90.00% | 90.00% | 90.00% | 90.00% | 4 |
+| \`src/a.ts\` | 90.0% | 90.0% | 90.0% | 90.0% | 4 |
 
-</details>"
+</details>
+
+---
+
+_coverage-insight v2 · one comment, updated in place on re-run_"
 `;
 
 exports[`renderMarkdown states > no-change: single-line minimal comment 1`] = `
@@ -72,148 +92,175 @@ exports[`renderMarkdown states > no-change: single-line minimal comment 1`] = `
 exports[`renderMarkdown states > passed: verdict first line after the D5 marker 1`] = `
 "<!-- coverage-insight -->
 
-✅ Coverage gate passed
+## ✅ Coverage gate passed
+
+_PR #42_
 
 ### Coverage totals
 
-| Metric | Base | Head | Δ |
-| --- | ---: | ---: | ---: |
-| Statements | 80.00% | 90.00% | +10.00 |
-| Branches | 80.00% | 90.00% | +10.00 |
-| Functions | 80.00% | 90.00% | +10.00 |
-| Lines | 80.00% | 90.00% | +10.00 |
+| Metric | Coverage | Δ |
+| --- | ---: | ---: |
+| Statements | **90.0%** | +10.0 |
+| Branches | **90.0%** | +10.0 |
+| Functions | **90.0%** | +10.0 |
+| Lines | **90.0%** | +10.0 |
 
-### Changed files
+### Changed files (1 of 1)
 
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | modified | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 4 |
+| File | Statements | Branches | Functions | Lines | Uncovered |
+| --- | ---: | ---: | ---: | ---: | --- |
+| \`src/a.ts\` | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 4 |
 
 <details>
-<summary>All files (1)</summary>
+<summary>Full coverage table — 1 file</summary>
 
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | modified | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 4 |
+| File | Statements | Branches | Functions | Lines | Uncovered |
+| --- | ---: | ---: | ---: | ---: | --- |
+| \`src/a.ts\` | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 4 |
 
-</details>"
+</details>
+
+---
+
+_coverage-insight v2 · one comment, updated in place on re-run_"
 `;
 
 exports[`renderMarkdown states > regression: severity badges 1`] = `
 "<!-- coverage-insight -->
 
-🔻 Coverage regression
+## 🔻 Coverage regression
 
-### Regressions
+_PR #42_
 
-| File | Metric | Base | Head | Δ | Severity |
-| --- | --- | ---: | ---: | ---: | --- |
-| \`src/a.ts\` (touched) | Statements | 80.00% | 20.00% | -60.00 | 🔴 critical |
-| \`src/a.ts\` (touched) | Branches | 80.00% | 20.00% | -60.00 | 🔴 critical |
-| \`src/a.ts\` (touched) | Functions | 80.00% | 20.00% | -60.00 | 🔴 critical |
-| \`src/a.ts\` (touched) | Lines | 80.00% | 20.00% | -60.00 | 🔴 critical |
+### 🔻 Coverage regressions — 1 file _(sorted by impact)_
+
+_Files where this PR reduced coverage. Ratchet policy treats these as violations even when the project threshold is still met._
+
+- **\`src/a.ts\`** — 🔴 critical
+  statements 80.0 → 20.0 (−60.0) · branches 80.0 → 20.0 (−60.0) · functions 80.0 → 20.0 (−60.0) · lines 80.0 → 20.0 (−60.0)
+
+_🔴 critical: drop > 5pp or below a path threshold · 🟡 warning: any decrease_
 
 ### Coverage totals
 
-| Metric | Base | Head | Δ |
-| --- | ---: | ---: | ---: |
-| Statements | 80.00% | 20.00% | -60.00 |
-| Branches | 80.00% | 20.00% | -60.00 |
-| Functions | 80.00% | 20.00% | -60.00 |
-| Lines | 80.00% | 20.00% | -60.00 |
+| Metric | Coverage | Δ |
+| --- | ---: | ---: |
+| Statements | **20.0%** | −60.0 |
+| Branches | **20.0%** | −60.0 |
+| Functions | **20.0%** | −60.0 |
+| Lines | **20.0%** | −60.0 |
 
-### Changed files
+### Changed files (1 of 1)
 
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | modified | 20.00% (-60.00) | 20.00% (-60.00) | 20.00% (-60.00) | 20.00% (-60.00) | — |
+| File | Statements | Branches | Functions | Lines | Uncovered |
+| --- | ---: | ---: | ---: | ---: | --- |
+| \`src/a.ts\` | 20.0% −60.0 | 20.0% −60.0 | 20.0% −60.0 | 20.0% −60.0 | — |
 
 <details>
-<summary>All files (1)</summary>
+<summary>Full coverage table — 1 file</summary>
 
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | modified | 20.00% (-60.00) | 20.00% (-60.00) | 20.00% (-60.00) | 20.00% (-60.00) | — |
+| File | Statements | Branches | Functions | Lines | Uncovered |
+| --- | ---: | ---: | ---: | ---: | --- |
+| \`src/a.ts\` | 20.0% −60.0 | 20.0% −60.0 | 20.0% −60.0 | 20.0% −60.0 | — |
 
-</details>"
+</details>
+
+---
+
+_coverage-insight v2 · one comment, updated in place on re-run_"
 `;
 
 exports[`renderMarkdown states > tests-failed: failures first, coverage marked partial 1`] = `
 "<!-- coverage-insight -->
 
-🛑 Tests failed
+## 🛑 Tests failed — report in failure mode
 
-**1 of 5 tests failed.**
+_PR #42_
 
-### Failed tests
+| Failed | Passed | Total |
+| ---: | ---: | ---: |
+| **1** | 4 | 5 |
 
-**\`src/a.test.ts\`**
-- ✗ boom
+### Failed suites
 
-> The coverage gate is deferred until tests pass.
+<details open>
+<summary><code>src/a.test.ts</code> — 1 failed test</summary>
 
-### Coverage (partial — tests failed)
+- ❌ boom
 
-| Metric | Base | Head | Δ |
-| --- | ---: | ---: | ---: |
-| Statements | 80.00% | 90.00% | +10.00 |
-| Branches | 80.00% | 90.00% | +10.00 |
-| Functions | 80.00% | 90.00% | +10.00 |
-| Lines | 80.00% | 90.00% | +10.00 |
+</details>
 
-### Changed files
-
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | modified | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 4 |
+> ⚠️ Coverage shown below is partial — computed from the failed run. Gate evaluation deferred until tests pass.
 
 <details>
-<summary>All files (1)</summary>
+<summary>Partial coverage summary (informational only)</summary>
 
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | modified | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 4 |
+### Coverage totals
 
-</details>"
+| Metric | Coverage | Δ |
+| --- | ---: | ---: |
+| Statements | **90.0%** | +10.0 |
+| Branches | **90.0%** | +10.0 |
+| Functions | **90.0%** | +10.0 |
+| Lines | **90.0%** | +10.0 |
+
+### Changed files (1 of 1)
+
+| File | Statements | Branches | Functions | Lines | Uncovered |
+| --- | ---: | ---: | ---: | ---: | --- |
+| \`src/a.ts\` | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 4 |
+
+</details>
+
+---
+
+_coverage-insight v2 · one comment, updated in place on re-run_"
 `;
 
 exports[`renderMarkdown states > threshold-failed: compliance table and shortest path to green 1`] = `
 "<!-- coverage-insight -->
 
-❌ Coverage gate failed
+## ❌ Coverage gate failed \`blocks merge\`
 
-### Compliance
+_PR #42_
 
-| Metric | Required | Actual | Gap |
-| --- | ---: | ---: | ---: |
-| Lines | 90.00% | 80.00% | 10.00pp |
-| Branches (\`src/a.ts\`) | 95.00% | 70.00% | 25.00pp |
+### Threshold compliance
 
-### Shortest path to green
+| Metric | Required | PR | Gap | Status |
+| --- | ---: | ---: | ---: | --- |
+| Lines | 90% | 90.0% | ±0.0 | ✅ pass |
 
-1. \`src/a.ts\` — branches 70.00% → 95.00% required (gap 25.00pp)
+### Shortest path to green — smallest set of files that closes the gap
+
+| File | Uncovered | Impact |
+| --- | --- | --- |
+| \`src/a.ts\` | 1 uncovered line | closes the full 10.0pp lines gap |
 
 ### Coverage totals
 
-| Metric | Base | Head | Δ |
-| --- | ---: | ---: | ---: |
-| Statements | 80.00% | 90.00% | +10.00 |
-| Branches | 80.00% | 90.00% | +10.00 |
-| Functions | 80.00% | 90.00% | +10.00 |
-| Lines | 80.00% | 90.00% (required 90%) | +10.00 |
+| Metric | Coverage | Δ |
+| --- | ---: | ---: |
+| Statements | **90.0%** | +10.0 |
+| Branches | **90.0%** | +10.0 |
+| Functions | **90.0%** | +10.0 |
+| Lines | **90.0%** (required 90%) | +10.0 |
 
-### Changed files
+### Changed files (1 of 1)
 
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | modified | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 4 |
+| File | Statements | Branches | Functions | Lines | Uncovered |
+| --- | ---: | ---: | ---: | ---: | --- |
+| \`src/a.ts\` | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 4 |
 
 <details>
-<summary>All files (1)</summary>
+<summary>Full coverage table — 1 file</summary>
 
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | modified | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 90.00% (+10.00) | 4 |
+| File | Statements | Branches | Functions | Lines | Uncovered |
+| --- | ---: | ---: | ---: | ---: | --- |
+| \`src/a.ts\` | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 4 |
 
-</details>"
+</details>
+
+---
+
+_coverage-insight v2 · one comment, updated in place on re-run_"
 `;
