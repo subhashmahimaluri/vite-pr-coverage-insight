@@ -65,6 +65,9 @@ export const policyResultSchema = z.object({
 export const testFailuresSchema = z.object({
   numFailedTests: z.number().int(),
   numTotalTests: z.number().int(),
+  numPassedTests: z.number().int().optional(),
+  numTotalSuites: z.number().int().optional(),
+  numFailedSuites: z.number().int().optional(),
   failedTests: z.array(
     z.object({
       testName: z.string(),

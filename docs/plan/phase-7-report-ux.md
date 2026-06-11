@@ -33,6 +33,23 @@ single-run deltas, any-format parsers, ratchet/override policy, 8-state
 machine, JSON/HTML artifacts, history sparklines, monorepo rows, AI sections,
 CLI.
 
+## Corrections from review (binding)
+
+1. **No open all-files table — ever.** The reference shows only: status
+   summary table, then grouped spoilers. Our file sections become exactly:
+   `✏️ Files changed in this PR` (open, touched files only) → `🐣 New files`
+   (spoiler) → `🔻 Files with reduced coverage` (spoiler) → full table only
+   as a spoiler and only when ≤ 100 files (the HTML artifact owns full
+   detail).
+2. **Graphs and colors in the comment are possible** with three GitHub
+   markdown features: mermaid `xychart-beta` (a real rendered line chart for
+   the coverage trend), alert panels (`[!CAUTION]` red / `[!WARNING]` yellow
+   / `[!NOTE]` blue), and LaTeX color for green/red delta text
+   (`$\color{green}{\textsf{+1.3}}$`). The screenshot-style dashboard
+   (treemap, file detail) is the HTML artifact, linked from the footer.
+3. The reference runs tests twice (base + head); we keep our single-run
+   baseline store — same comparison output, half the CI time.
+
 ## Stage 7.1 — Comment v3 visuals (the big one)
 
 Steps: totals table → `| St. | Metric | Percentage | Covered/Total |` with

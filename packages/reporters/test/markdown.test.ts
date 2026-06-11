@@ -79,7 +79,7 @@ describe('renderMarkdown states', () => {
     );
     expect(md).not.toContain('### Changed files');
     expect(md).not.toContain('Files changed in this PR');
-    expect(md).toContain('<summary>Full coverage table — 2 files</summary>');
+    expect(md).toContain('<summary>📋 Full coverage table (2)</summary>');
   });
 
   it('changed-files table follows the PR diff when touched info exists', () => {
@@ -94,8 +94,8 @@ describe('renderMarkdown states', () => {
         touchedFiles: ['src/a.ts'],
       })
     );
-    expect(md).toContain('### Files changed in this PR');
-    const table = md.split('### Files changed in this PR')[1].split('<details>')[0];
+    expect(md).toContain('### ✏️ Files changed in this PR');
+    const table = md.split('### ✏️ Files changed in this PR')[1].split('<details>')[0];
     expect(table).toContain('src/a.ts');
     expect(table).not.toContain('src/untouched.ts');
     // the Change column is meaningless without a baseline
@@ -168,10 +168,17 @@ describe('renderMarkdown cross-state rules', () => {
       total: 100,
       uncoveredLines: [i + 1, i + 2, i + 5],
     }));
-    const md = renderMarkdown(report({ head: model(files), base: model(files.slice(1)) }), {
-      htmlReportUrl: 'https://example.com/report',
-      maxChars: 20000,
-    });
+    const md = renderMarkdown(
+      report({
+        head: model(files),
+        base: model(files.slice(1)),
+        touchedFiles: files.map((f) => f.path),
+      }),
+      {
+        htmlReportUrl: 'https://example.com/report',
+        maxChars: 20000,
+      }
+    );
     expect(md.length).toBeLessThanOrEqual(20000);
     const firstContent = md.split('\n').find((l, i) => i > 0 && l.trim() !== '')!;
     expect(firstContent).toMatch(/Coverage|regression/);

@@ -64,6 +64,47 @@ function fmtDelta(delta: number | null): string {
   return delta > 0 ? `+${delta.toFixed(1)}` : `−${Math.abs(delta).toFixed(1)}`;
 }
 
+/** green/red delta with arrow, reference-style: (+0.46% 🔼) / (-0.46% 🔻) */
+function fmtDeltaRich(delta: number | null): string {
+  if (delta === null) return '';
+  if (delta === 0) return '(±0.0%)';
+  const sign = delta > 0 ? '+' : '-';
+  const color = delta > 0 ? 'green' : 'red';
+  const arrow = delta > 0 ? '🔼' : '🔻';
+  return `($\\color{${color}}{\\textsf{${sign}${Math.abs(delta).toFixed(2)}\\%}}$ ${arrow})`;
+}
+
+/** 🟢🟡🔴 health dot: threshold-aware, banded fallback (reference defaults) */
+function statusIcon(pct: number, required?: number): string {
+  if (required !== undefined) return pct >= required ? '🟢' : '🔴';
+  return pct >= 80 ? '🟢' : pct >= 60 ? '🟡' : '🔴';
+}
+
+function blobUrl(report: CoverageReport, path: string): string | null {
+  if (!report.repo || !report.pr?.headSha) return null;
+  return `https://github.com/${report.repo.owner}/${report.repo.repo}/blob/${report.pr.headSha}/${path}`;
+}
+
+function linkedPath(report: CoverageReport, path: string): string {
+  const url = blobUrl(report, path);
+  return url ? `[\`${path}\`](${url})` : `\`${path}\``;
+}
+
+function linkedRanges(
+  report: CoverageReport,
+  path: string,
+  ranges: { start: number; end: number }[] | undefined
+): string {
+  if (!ranges || ranges.length === 0) return '—';
+  const url = blobUrl(report, path);
+  return ranges
+    .map((r) => {
+      const label = r.start === r.end ? `${r.start}` : `${r.start}–${r.end}`;
+      return url ? `[${label}](${url}#L${r.start}-L${r.end})` : label;
+    })
+    .join(', ');
+}
+
 /** arrow form used in regression cards: 70.7 → 62.5 (−8.2) */
 function fmtArrow(m: MetricDelta): string {
   if (m.base === null || m.delta === null) return fmtPct(m.head);
@@ -134,32 +175,67 @@ function totalsSection(report: CoverageReport, withDeltas: boolean): string {
   const required = requiredByMetric(report);
 
   const header = [
-    'Metric',
-    'Coverage',
-    ...(withDeltas ? ['Δ'] : []),
+    'St.',
+    'Category',
+    'Percentage',
+    'Covered / Total',
     ...(hasTrend ? ['Trend'] : []),
   ];
-  const align = ['---', '---:', ...(withDeltas ? ['---:'] : []), ...(hasTrend ? ['---'] : [])];
-  const lines = [
-    '### Coverage totals',
-    '',
-    `| ${header.join(' | ')} |`,
-    `| ${align.join(' | ')} |`,
-  ];
+  const align = [':-:', '---', '---', '---:', ...(hasTrend ? ['---'] : [])];
+  const lines = [`| ${header.join(' | ')} |`, `| ${align.join(' | ')} |`];
 
   for (const key of METRIC_KEYS) {
     const m = totals[key];
     const req = required[key];
-    const coverage = `**${fmtPct(m.head)}**${req !== undefined ? ` (required ${req}%)` : ''}`;
+    const pct =
+      `**${fmtPct(m.head)}**` +
+      (withDeltas && m.delta !== null ? ` ${fmtDeltaRich(m.delta)}` : '') +
+      (req !== undefined ? ` — required ${req}%` : '');
+    const counts =
+      m.covered !== undefined && m.total !== undefined ? `${m.covered}/${m.total}` : '';
     const cells = [
+      statusIcon(m.head, req),
       METRIC_LABELS[key],
-      coverage,
-      ...(withDeltas ? [fmtDelta(m.delta)] : []),
+      pct,
+      counts,
       ...(hasTrend ? [trendFor(report, key)] : []),
     ];
     lines.push(`| ${cells.join(' | ')} |`);
   }
   return lines.join('\n');
+}
+
+/** real rendered line chart in the comment via mermaid (GitHub renders it) */
+function trendChartSection(report: CoverageReport): string {
+  const history = report.history ?? [];
+  if (history.length < 2) return '';
+  const points = history.slice(-20);
+  const labels = points.map((p) => `"${p.sha.slice(0, 7)}"`).join(', ');
+  const values = points.map((p) => p.lines.toFixed(1)).join(', ');
+  const min = Math.max(0, Math.floor(Math.min(...points.map((p) => p.lines)) - 5));
+  return [
+    '<details>',
+    `<summary>📈 Coverage trend — lines % (last ${points.length} baselines)</summary>`,
+    '',
+    '```mermaid',
+    'xychart-beta',
+    `  x-axis [${labels}]`,
+    `  y-axis "lines %" ${min} --> 100`,
+    `  line [${values}]`,
+    '```',
+    '',
+    '</details>',
+  ].join('\n');
+}
+
+function testRunSection(report: CoverageReport): string {
+  const t = report.testFailures;
+  if (!t) return '';
+  if (t.numFailedTests > 0) return ''; // failure state renders its own suites section
+  const passed = t.numPassedTests ?? t.numTotalTests;
+  if (!passed) return '';
+  const suites = t.numTotalSuites ? ` in ${plural(t.numTotalSuites, 'suite')}` : '';
+  return `### ✅ Test suite run success\n\n${plural(passed, 'test')} passing${suites}.`;
 }
 
 function touchedBadge(file: FileReport): string {
@@ -178,14 +254,50 @@ function fileCells(file: FileReport, withDeltas: boolean): string[] {
 
 function fileTableHeader(): string[] {
   return [
-    '| File | Statements | Branches | Functions | Lines | Uncovered |',
-    '| --- | ---: | ---: | ---: | ---: | --- |',
+    '| St. | File | Statements | Branches | Functions | Lines | Uncovered |',
+    '| :-: | --- | ---: | ---: | ---: | ---: | --- |',
   ];
 }
 
-function fileRow(file: FileReport, withDeltas: boolean): string {
-  const chip = withDeltas && file.change === 'new' ? ' `new`' : '';
-  return `| \`${file.path}\`${chip} | ${fileCells(file, withDeltas).join(' | ')} | ${fmtRanges(file.uncoveredRanges)} |`;
+function fileRow(report: CoverageReport, file: FileReport, withDeltas: boolean): string {
+  const chip = withDeltas && file.change === 'new' ? ' 🐣' : '';
+  const icon = statusIcon(file.metrics.lines.head);
+  return `| ${icon} | ${linkedPath(report, file.path)}${chip} | ${fileCells(file, withDeltas).join(' | ')} | ${linkedRanges(report, file.path, file.uncoveredRanges)} |`;
+}
+
+function spoilerTable(
+  report: CoverageReport,
+  summary: string,
+  files: FileReport[],
+  withDeltas: boolean,
+  cap = 25
+): string {
+  if (files.length === 0) return '';
+  const lines = [
+    '<details>',
+    `<summary>${summary} (${files.length})</summary>`,
+    '',
+    ...fileTableHeader(),
+  ];
+  for (const file of files.slice(0, cap)) lines.push(fileRow(report, file, withDeltas));
+  if (files.length > cap) lines.push('', `_…${files.length - cap} more in the HTML report._`);
+  lines.push('', '</details>');
+  return lines.join('\n');
+}
+
+function newFilesSection(report: CoverageReport): string {
+  const fresh = (report.files ?? []).filter((f) => f.change === 'new');
+  return spoilerTable(report, '🐣 Show new files', fresh, false);
+}
+
+function reducedFilesSection(report: CoverageReport): string {
+  const reduced = (report.files ?? []).filter((f) =>
+    METRIC_KEYS.some((key) => {
+      const delta = f.metrics[key].delta;
+      return delta !== null && delta < 0;
+    })
+  );
+  return spoilerTable(report, '🔻 Show files with reduced coverage', reduced, true);
 }
 
 /**
@@ -194,7 +306,12 @@ function fileRow(file: FileReport, withDeltas: boolean): string {
  * when there is no baseline, where every file would be 'new' and the table
  * would just dump the repo.
  */
-function changedFilesSection(files: FileReport[], withDeltas: boolean, rowLimit?: number): string {
+function changedFilesSection(
+  report: CoverageReport,
+  withDeltas: boolean,
+  rowLimit?: number
+): string {
+  const files = report.files ?? [];
   const hasTouchInfo = files.some((f) => f.touched !== undefined);
   const changed = hasTouchInfo
     ? files.filter((f) => f.touched)
@@ -203,28 +320,22 @@ function changedFilesSection(files: FileReport[], withDeltas: boolean, rowLimit?
       : [];
   if (changed.length === 0) return '';
   const title = hasTouchInfo
-    ? `### Files changed in this PR (${changed.length} of ${files.length})`
-    : `### Changed files (${changed.length} of ${files.length})`;
+    ? `### ✏️ Files changed in this PR (${changed.length} of ${files.length})`
+    : `### ✏️ Changed files (${changed.length} of ${files.length})`;
   const shown = rowLimit !== undefined ? changed.slice(0, rowLimit) : changed;
   const lines = [title, '', ...fileTableHeader()];
-  for (const file of shown) lines.push(fileRow(file, withDeltas));
+  for (const file of shown) lines.push(fileRow(report, file, withDeltas));
   if (shown.length < changed.length) {
     lines.push('', `_…${changed.length - shown.length} more changed files omitted._`);
   }
   return lines.join('\n');
 }
 
-function fullFilesSection(files: FileReport[], withDeltas: boolean): string {
-  if (files.length === 0) return '';
-  const lines = [
-    '<details>',
-    `<summary>Full coverage table — ${plural(files.length, 'file')}</summary>`,
-    '',
-    ...fileTableHeader(),
-  ];
-  for (const file of files) lines.push(fileRow(file, withDeltas));
-  lines.push('', '</details>');
-  return lines.join('\n');
+/** never an open all-files dump (reference parity); spoiler only, ≤100 files */
+function fullFilesSection(report: CoverageReport, withDeltas: boolean): string {
+  const files = report.files ?? [];
+  if (files.length === 0 || files.length > 100) return '';
+  return spoilerTable(report, '📋 Full coverage table', files, withDeltas, 100);
 }
 
 function stalenessNote(report: CoverageReport): string {
@@ -248,7 +359,8 @@ function complianceSection(report: CoverageReport): string {
   const lines: string[] = [];
   if (failing.length > 0) {
     lines.push(
-      `> ❌ **${failing.length} of ${metricsWithRequired.length}** ${
+      '> [!CAUTION]',
+      `> **${failing.length} of ${metricsWithRequired.length}** ${
         failing.length === 1 ? 'metric is' : 'metrics are'
       } below the project threshold. Check run marked \`failure\`.`,
       ''
@@ -377,13 +489,10 @@ function failedTestsSection(report: CoverageReport): string {
 }
 
 const PARTIAL_BANNER =
-  '> ⚠️ Coverage shown below is partial — computed from the failed run. Gate evaluation deferred until tests pass.';
+  '> [!WARNING]\n> Coverage shown below is partial — computed from the failed run. Gate evaluation deferred until tests pass.';
 
 function partialCoverageSection(report: CoverageReport, withDeltas: boolean): string {
-  const inner = [
-    totalsSection(report, withDeltas),
-    changedFilesSection(report.files ?? [], withDeltas),
-  ]
+  const inner = [totalsSection(report, withDeltas), changedFilesSection(report, withDeltas)]
     .filter(Boolean)
     .join('\n\n');
   if (!inner) return '';
@@ -456,7 +565,11 @@ function regressionsSection(report: CoverageReport): string {
   if (regressed.length > 10) {
     lines.push(`- _…${regressed.length - 10} more regressed files in the full table._`);
   }
-  lines.push('', '_🔴 critical: drop > 5pp or below a path threshold · 🟡 warning: any decrease_');
+  lines.push(
+    '',
+    '> [!IMPORTANT]',
+    '> 🔴 critical: drop > 5pp or below a path threshold · 🟡 warning: any decrease'
+  );
   return lines.join('\n');
 }
 
@@ -496,30 +609,34 @@ function monorepoSection(report: CoverageReport): string {
   }
   lines.push('');
   for (const project of projects) {
-    lines.push(projectDetails(project), '');
+    lines.push(projectDetails(report, project), '');
   }
   return lines.join('\n').trimEnd();
 }
 
-function projectDetails(project: ProjectReport): string {
+function projectDetails(report: CoverageReport, project: ProjectReport): string {
   const lines = [
     '<details>',
     `<summary>${project.name} — ${plural(project.files.length, 'file')}</summary>`,
     '',
+    ...fileTableHeader(),
   ];
-  const changed = changedFilesSection(project.files, true);
-  if (changed) lines.push(changed, '');
-  lines.push(...fileTableHeader());
-  for (const file of project.files) lines.push(fileRow(file, true));
+  for (const file of project.files) lines.push(fileRow(report, file, true));
   lines.push('', '</details>');
   return lines.join('\n');
 }
 
-function footer(opts: RenderMarkdownOptions): string {
+const ACTION_URL = 'https://github.com/subhashmahimaluri/vite-pr-coverage-insight';
+
+function footer(report: CoverageReport, opts: RenderMarkdownOptions): string {
   const links: string[] = [];
   if (opts.htmlReportUrl) links.push(`[Interactive report](${opts.htmlReportUrl})`);
-  const meta = [...links, 'coverage-insight v2 · one comment, updated in place on re-run'];
-  return `---\n\n_${meta.join(' · ')}_`;
+  let generated = `Report generated by [coverage-insight](${ACTION_URL})`;
+  const sha = report.pr?.headSha;
+  if (sha && report.repo) {
+    generated += ` from [\`${sha.slice(0, 7)}\`](https://github.com/${report.repo.owner}/${report.repo.repo}/commit/${sha})`;
+  }
+  return `---\n\n_${[...links, generated].join(' · ')}_`;
 }
 
 // ---------------------------------------------------------------------------
@@ -543,27 +660,37 @@ function sectionsFor(report: CoverageReport, withDeltas: boolean): Section[] {
 
   push(stalenessNote(report), { protected: true });
 
+  const deltaGroups = (withDeltasFlag: boolean) => {
+    push(changedFilesSection(report, withDeltasFlag), {
+      changedFiles: { files, withDeltas: withDeltasFlag },
+    });
+    if (withDeltasFlag) {
+      push(newFilesSection(report));
+      push(reducedFilesSection(report));
+    }
+    push(trendChartSection(report));
+    push(fullFilesSection(report, withDeltasFlag), { fullTable: true });
+    push(testRunSection(report));
+  };
+
   switch (report.state) {
     case 'passed':
     case 'no-change':
       push(totalsSection(report, true), { protected: true });
-      push(changedFilesSection(files, true), { changedFiles: { files, withDeltas: true } });
-      push(fullFilesSection(files, true), { fullTable: true });
+      deltaGroups(true);
       break;
 
     case 'threshold-failed':
       push(complianceSection(report), { protected: true });
       push(shortestPathSection(report), { protected: true });
       push(totalsSection(report, true));
-      push(changedFilesSection(files, true), { changedFiles: { files, withDeltas: true } });
-      push(fullFilesSection(files, true), { fullTable: true });
+      deltaGroups(true);
       break;
 
     case 'regression':
       push(regressionsSection(report), { protected: true });
       push(totalsSection(report, true));
-      push(changedFilesSection(files, true), { changedFiles: { files, withDeltas: true } });
-      push(fullFilesSection(files, true), { fullTable: true });
+      deltaGroups(true);
       break;
 
     case 'tests-failed':
@@ -574,12 +701,11 @@ function sectionsFor(report: CoverageReport, withDeltas: boolean): Section[] {
 
     case 'no-baseline':
       push(
-        '_No baseline was found — absolute coverage only. Deltas will appear once the next baseline run records one._',
+        '> [!NOTE]\n> No baseline was found — absolute coverage only. Deltas will appear once the next baseline run records one.',
         { protected: true }
       );
       push(totalsSection(report, false), { protected: true });
-      push(changedFilesSection(files, false), { changedFiles: { files, withDeltas: false } });
-      push(fullFilesSection(files, false), { fullTable: true });
+      deltaGroups(false);
       break;
 
     case 'invalid-data':
@@ -608,7 +734,10 @@ export function renderMarkdown(report: CoverageReport, opts: RenderMarkdownOptio
 
   const withDeltas = report.baseline !== null || (report.totals?.lines.base ?? null) !== null;
   let sections = sectionsFor(report, withDeltas);
-  let output = assemble(COMMENT_MARKER, header, [...sections.map((s) => s.text), footer(opts)]);
+  let output = assemble(COMMENT_MARKER, header, [
+    ...sections.map((s) => s.text),
+    footer(report, opts),
+  ]);
   if (output.length <= maxChars) return output;
 
   const notice = opts.htmlReportUrl
@@ -617,7 +746,11 @@ export function renderMarkdown(report: CoverageReport, opts: RenderMarkdownOptio
 
   // step 1 — drop the collapsed full table(s)
   sections = sections.filter((s) => !s.fullTable);
-  output = assemble(COMMENT_MARKER, header, [...sections.map((s) => s.text), notice, footer(opts)]);
+  output = assemble(COMMENT_MARKER, header, [
+    ...sections.map((s) => s.text),
+    notice,
+    footer(report, opts),
+  ]);
   if (output.length <= maxChars) return output;
 
   // step 2 — cap the changed-files table
@@ -626,17 +759,25 @@ export function renderMarkdown(report: CoverageReport, opts: RenderMarkdownOptio
       ? {
           ...s,
           text: changedFilesSection(
-            s.changedFiles.files,
+            report,
             s.changedFiles.withDeltas,
             CHANGED_ROW_LIMIT_WHEN_TRUNCATING
           ),
         }
       : s
   );
-  output = assemble(COMMENT_MARKER, header, [...sections.map((s) => s.text), notice, footer(opts)]);
+  output = assemble(COMMENT_MARKER, header, [
+    ...sections.map((s) => s.text),
+    notice,
+    footer(report, opts),
+  ]);
   if (output.length <= maxChars) return output;
 
   // step 3 — keep only protected sections
   sections = sections.filter((s) => s.protected);
-  return assemble(COMMENT_MARKER, header, [...sections.map((s) => s.text), notice, footer(opts)]);
+  return assemble(COMMENT_MARKER, header, [
+    ...sections.map((s) => s.text),
+    notice,
+    footer(report, opts),
+  ]);
 }

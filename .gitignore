@@ -8,3 +8,4 @@ packages/*/dist/
 # only the bundled action entry is committed
 /dist/*
 !/dist/index.js
+jest-coverage-report-action-main/*

@@ -53,6 +53,9 @@ export type TestFailure = {
 export type TestFailuresResult = {
   numFailedTests: number;
   numTotalTests: number;
+  numPassedTests?: number;
+  numTotalSuites?: number;
+  numFailedSuites?: number;
   failedTests: TestFailure[];
 };
 
