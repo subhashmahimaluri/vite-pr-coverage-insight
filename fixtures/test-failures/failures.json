@@ -1,0 +1,14 @@
+{
+  "numFailedTests": 2,
+  "numTotalTests": 48,
+  "failedTests": [
+    {
+      "testName": "should round half-up at the boundary",
+      "filePath": "/app/src/__tests__/math.test.ts"
+    },
+    {
+      "testName": "should trim unicode whitespace",
+      "filePath": "/app/src/__tests__/string.test.ts"
+    }
+  ]
+}

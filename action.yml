@@ -18,5 +18,5 @@ inputs:
     description: 'Whether to use GitHub Check Run API'
     default: 'false'
 runs:
-  using: 'node16'
+  using: 'node24'
   main: 'dist/index.js'
