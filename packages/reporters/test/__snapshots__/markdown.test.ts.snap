@@ -279,12 +279,12 @@ _PR #42_
   <img alt="coverage metrics: value, delta and 30-run trend per metric" src="https://raw.test/l.svg">
 </picture>
 
-| St. | Category | Percentage | Covered / Total | Trend |
-| :-: | --- | --- | ---: | --- |
-| 🟢 | Statements | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |  |
-| 🟢 | Branches | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |  |
-| 🟢 | Functions | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |  |
-| 🟢 | Lines | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 | ▁▅█ |
+| St. | Category | Percentage | Covered / Total |
+| :-: | --- | --- | ---: |
+| 🟢 | Statements | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
+| 🟢 | Branches | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
+| 🟢 | Functions | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
+| 🟢 | Lines | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
 
 ### ✏️ Changed files (1 of 1)
 
@@ -292,8 +292,7 @@ _PR #42_
 | :-: | --- | ---: | ---: | ---: | ---: | --- |
 | 🟢 | \`src/a.ts\` | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 4 |
 
-<details>
-<summary>📈 Coverage trend — lines % (last 3 baselines)</summary>
+### 📈 Coverage trend — lines % (last 3 baselines)
 
 \`\`\`mermaid
 xychart-beta
@@ -301,8 +300,6 @@ xychart-beta
   y-axis "lines %" 75 --> 100
   line [80.0, 85.0, 90.0]
 \`\`\`
-
-</details>
 
 <details>
 <summary>📋 Full coverage table (1)</summary>

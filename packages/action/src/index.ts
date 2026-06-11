@@ -124,7 +124,7 @@ async function runBaselineMode(): Promise<void> {
 
 async function runReportMode(): Promise<void> {
   const script = getInput('run-script');
-  if (script) runScript(script);
+  const scriptExitCode = script ? runScript(script) : 0;
 
   const githubToken = getInput('github-token', { required: true });
   const basePath = getInput('base');
@@ -164,6 +164,19 @@ async function runReportMode(): Promise<void> {
   let testFailures: TestFailuresResult | null = null;
   if (testFailuresPath) {
     testFailures = parseTestFailures(path.resolve(testFailuresPath));
+  }
+  // run-script failed but no failures file: still report failure mode (state 3)
+  if (scriptExitCode !== 0 && (!testFailures || testFailures.numFailedTests === 0)) {
+    testFailures = {
+      numFailedTests: 1,
+      numTotalTests: testFailures?.numTotalTests ?? 0,
+      failedTests: [
+        {
+          testName: `Test run exited with code ${scriptExitCode} — see the CI log for details (provide the test-failures input for a per-test breakdown)`,
+          filePath: script,
+        },
+      ],
+    };
   }
 
   // base: explicit input (v1, D4) wins over the baseline store (Stage 2.2)
@@ -335,8 +348,13 @@ async function runReportMode(): Promise<void> {
 
   const markdown = renderMarkdown(report, { visuals, badgeImages }) + ai.sections;
 
+  const testsFailed = (testFailures?.numFailedTests ?? 0) > 0;
   let conclusion: 'success' | 'failure' | 'neutral' =
-    policy.verdict === 'fail' ? 'failure' : policy.verdict === 'warn' ? 'neutral' : 'success';
+    policy.verdict === 'fail' || testsFailed || errors.length > 0
+      ? 'failure'
+      : policy.verdict === 'warn'
+        ? 'neutral'
+        : 'success';
   if (conclusion === 'success' && ai.conclusionOverride) {
     conclusion = ai.conclusionOverride;
   }
@@ -368,8 +386,15 @@ async function runReportMode(): Promise<void> {
     console.warn(`⚠️ ${testFailures.numFailedTests} tests failed`);
   }
 
-  // the gate is opt-in: only configured thresholds/ratchet can fail the job
-  if (policy.verdict === 'fail' && policy.violations.length > 0) {
+  // failed tests and broken inputs always fail the job (blocks merge with
+  // branch protection); the coverage gate fails it when thresholds are set
+  if (testsFailed) {
+    setFailed(`${testFailures!.numFailedTests} test(s) failed — see the PR comment`);
+  } else if (errors.length > 0) {
+    setFailed(
+      `Coverage report error: ${errors.map((e) => e.input).join(', ')} — see the PR comment`
+    );
+  } else if (policy.verdict === 'fail' && policy.violations.length > 0) {
     setFailed(
       `Coverage gate failed: ${policy.violations.length} violation(s) — see the PR comment`
     );

@@ -175,17 +175,10 @@ function headerBlock(report: CoverageReport): string {
 function totalsSection(report: CoverageReport, withDeltas: boolean): string {
   const totals = report.totals;
   if (!totals) return '';
-  const hasTrend = METRIC_KEYS.some((key) => trendFor(report, key) !== '');
   const required = requiredByMetric(report);
 
-  const header = [
-    'St.',
-    'Category',
-    'Percentage',
-    'Covered / Total',
-    ...(hasTrend ? ['Trend'] : []),
-  ];
-  const align = [':-:', '---', '---', '---:', ...(hasTrend ? ['---'] : [])];
+  const header = ['St.', 'Category', 'Percentage', 'Covered / Total'];
+  const align = [':-:', '---', '---', '---:'];
   const lines = [`| ${header.join(' | ')} |`, `| ${align.join(' | ')} |`];
 
   for (const key of METRIC_KEYS) {
@@ -197,13 +190,7 @@ function totalsSection(report: CoverageReport, withDeltas: boolean): string {
       (req !== undefined ? ` — required ${req}%` : '');
     const counts =
       m.covered !== undefined && m.total !== undefined ? `${m.covered}/${m.total}` : '';
-    const cells = [
-      statusIcon(m.head, req),
-      METRIC_LABELS[key],
-      pct,
-      counts,
-      ...(hasTrend ? [trendFor(report, key)] : []),
-    ];
+    const cells = [statusIcon(m.head, req), METRIC_LABELS[key], pct, counts];
     lines.push(`| ${cells.join(' | ')} |`);
   }
   return lines.join('\n');
@@ -218,8 +205,7 @@ function trendChartSection(report: CoverageReport): string {
   const values = points.map((p) => p.lines.toFixed(1)).join(', ');
   const min = Math.max(0, Math.floor(Math.min(...points.map((p) => p.lines)) - 5));
   return [
-    '<details>',
-    `<summary>📈 Coverage trend — lines % (last ${points.length} baselines)</summary>`,
+    `### 📈 Coverage trend — lines % (last ${points.length} baselines)`,
     '',
     '```mermaid',
     'xychart-beta',
@@ -227,8 +213,6 @@ function trendChartSection(report: CoverageReport): string {
     `  y-axis "lines %" ${min} --> 100`,
     `  line [${values}]`,
     '```',
-    '',
-    '</details>',
   ].join('\n');
 }
 

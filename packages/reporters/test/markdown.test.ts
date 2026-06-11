@@ -223,7 +223,7 @@ describe('visuals modes', () => {
     expect(md).toContain('xychart-beta');
   });
 
-  it('text: no mermaid, no picture — unicode trend column only', () => {
+  it('text: no mermaid, no picture — plain tables only', () => {
     const md = renderMarkdown(
       report({
         history: [
@@ -235,6 +235,5 @@ describe('visuals modes', () => {
     );
     expect(md).not.toContain('<picture>');
     expect(md).not.toContain('mermaid');
-    expect(md).toContain('▁'); // unicode sparkline survives
   });
 });

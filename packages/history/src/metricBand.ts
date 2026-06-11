@@ -31,6 +31,11 @@ function deltaColor(delta: number | null, theme: Theme): string {
   return delta > 0 ? '#1a7f37' : '#cf222e';
 }
 
+/** value + sparkline colored by coverage band so a flat delta is not gray */
+function bandColor(pct: number): string {
+  return pct >= 80 ? '#1a7f37' : pct >= 60 ? '#9a6700' : '#cf222e';
+}
+
 function sparklinePath(values: number[], x0: number, y0: number, w: number, h: number): string {
   if (values.length < 2) return '';
   const min = Math.min(...values);
@@ -53,7 +58,8 @@ export function renderMetricBandSvg(series: HistoryPoint[], theme: Theme): strin
     const current = values[values.length - 1] ?? 0;
     const previous = values.length > 1 ? values[values.length - 2] : null;
     const delta = previous === null ? null : Math.round((current - previous) * 100) / 100;
-    const color = deltaColor(delta, theme);
+    const color = bandColor(current);
+    const dColor = deltaColor(delta, theme);
     const arrow = delta === null || delta === 0 ? '' : delta > 0 ? '▲' : '▼';
     const deltaText =
       delta === null ? '' : delta === 0 ? '±0.0' : `${arrow}${Math.abs(delta).toFixed(1)}`;
@@ -62,9 +68,9 @@ export function renderMetricBandSvg(series: HistoryPoint[], theme: Theme): strin
     return [
       `<rect x="${x}" y="0" width="${CARD_W}" height="${CARD_H}" rx="8" fill="${t.card}"/>`,
       `<text x="${x + 14}" y="22" font-size="12" fill="${t.muted}">${LABELS[key]}</text>`,
-      `<text x="${x + 14}" y="46" font-size="22" font-weight="700" fill="${t.fg}">${current.toFixed(1)}%</text>`,
+      `<text x="${x + 14}" y="46" font-size="22" font-weight="700" fill="${color}">${current.toFixed(1)}%</text>`,
       deltaText
-        ? `<text x="${x + CARD_W - 14}" y="46" font-size="13" font-weight="600" text-anchor="end" fill="${color}">${deltaText}</text>`
+        ? `<text x="${x + CARD_W - 14}" y="46" font-size="13" font-weight="600" text-anchor="end" fill="${dColor}">${deltaText}</text>`
         : '',
       spark ? `<path d="${spark}" fill="none" stroke="${color}" stroke-width="2"/>` : '',
     ].join('');
