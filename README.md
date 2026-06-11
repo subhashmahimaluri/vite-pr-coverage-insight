@@ -50,7 +50,7 @@ jobs:
       - name: Generate test failures JSON
         run: |
           if [ $? -ne 0 ]; then
-            node scripts/extract-test-failures.js > test-failures.json
+            node examples/extract-test-failures.js > test-failures.json
           else
             echo '{"numFailedTests": 0, "numTotalTests": 0, "failedTests": []}' > test-failures.json
           fi
