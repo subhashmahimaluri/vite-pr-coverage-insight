@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoverageSummary } from '@coverage-insight/core';
-import { publishBaseline } from '../src/baseline/publish';
+import { commitBranchFiles, publishBaseline } from '../src/baseline/publish';
 import { getMergeBaseSha, resolveBaseline } from '../src/baseline/resolve';
 import { baselinePath, cacheKey } from '../src/baseline/store';
 
@@ -136,6 +136,64 @@ describe('publishBaseline', () => {
     });
 
     expect(result.pruned).toEqual([]);
+  });
+});
+
+describe('commitBranchFiles', () => {
+  const files = [{ path: 'badges/pr-39-metric-band-light.svg', content: '<svg>new</svg>' }];
+
+  it('commits changed files onto the branch tip', async () => {
+    octokit.rest.repos.getContent.mockImplementation(notFound);
+    octokit.rest.git.getRef.mockResolvedValue({ data: { object: { sha: 'tip' } } });
+    octokit.rest.git.getCommit.mockResolvedValue({ data: { tree: { sha: 'tree' } } });
+
+    await commitBranchFiles({
+      octokit: octokit as never,
+      ...base,
+      branch: 'coverage-baseline',
+      message: 'pr #39 metric band',
+      files,
+    });
+
+    expect(octokit.rest.git.createTree).toHaveBeenCalledWith(
+      expect.objectContaining({ base_tree: 'tree' })
+    );
+    expect(octokit.rest.git.updateRef).toHaveBeenCalledWith(
+      expect.objectContaining({ ref: 'heads/coverage-baseline', sha: 'commit-sha' })
+    );
+  });
+
+  it('no-ops when every file already has identical content', async () => {
+    octokit.rest.repos.getContent.mockResolvedValue({ data: b64('<svg>new</svg>') });
+
+    await commitBranchFiles({
+      octokit: octokit as never,
+      ...base,
+      branch: 'coverage-baseline',
+      message: 'noop',
+      files,
+    });
+
+    expect(octokit.rest.git.createCommit).not.toHaveBeenCalled();
+  });
+
+  it('retries once when a concurrent run moved the ref', async () => {
+    octokit.rest.repos.getContent.mockImplementation(notFound);
+    octokit.rest.git.getRef.mockResolvedValue({ data: { object: { sha: 'tip' } } });
+    octokit.rest.git.getCommit.mockResolvedValue({ data: { tree: { sha: 'tree' } } });
+    octokit.rest.git.updateRef
+      .mockRejectedValueOnce(new Error('Update is not a fast forward'))
+      .mockResolvedValueOnce({});
+
+    await commitBranchFiles({
+      octokit: octokit as never,
+      ...base,
+      branch: 'coverage-baseline',
+      message: 'retry',
+      files,
+    });
+
+    expect(octokit.rest.git.updateRef).toHaveBeenCalledTimes(2);
   });
 });
 

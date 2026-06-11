@@ -136,4 +136,13 @@ describe('metric band (composite SVG)', () => {
     expect(dark).toContain('#0d1117');
     expect(metricBandPath('dark')).toBe('badges/metric-band-dark.svg');
   });
+
+  it('cards carry covered/total counts when the summary has them', async () => {
+    const { renderMetricBandSvg, prMetricBandPath } = await import('../src/metricBand');
+    const series = entriesToSeries([entry('a', '2026-06-10T00:00:00Z', 85)]);
+    expect(series[0].counts?.lines).toEqual({ covered: 85, total: 100 });
+    const svg = renderMetricBandSvg(series, 'light');
+    expect(svg).toContain('85/100 covered');
+    expect(prMetricBandPath(39, 'light')).toBe('badges/pr-39-metric-band-light.svg');
+  });
 });

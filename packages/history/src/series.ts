@@ -6,6 +6,8 @@ export type HistoryPoint = {
   sha: string;
   timestamp?: string;
   metrics: Record<MetricKey, number>;
+  /** covered/total counts per metric, when the stored summary carries them */
+  counts?: Record<MetricKey, { covered: number; total: number }>;
 };
 
 /**
@@ -62,10 +64,23 @@ export function entriesToSeries(entries: HistoryEntry[]): HistoryPoint[] {
   });
   return oldestFirst.map((entry) => {
     const metrics = {} as Record<MetricKey, number>;
+    const counts = {} as NonNullable<HistoryPoint['counts']>;
+    let hasCounts = true;
     for (const metric of METRIC_KEYS) {
-      metrics[metric] = entry.summary.total[metric].pct;
+      const total = entry.summary.total[metric];
+      metrics[metric] = total.pct;
+      if (typeof total.covered === 'number' && typeof total.total === 'number') {
+        counts[metric] = { covered: total.covered, total: total.total };
+      } else {
+        hasCounts = false;
+      }
     }
-    return { sha: entry.sha, timestamp: entry.timestamp, metrics };
+    return {
+      sha: entry.sha,
+      timestamp: entry.timestamp,
+      metrics,
+      ...(hasCounts ? { counts } : {}),
+    };
   });
 }
 

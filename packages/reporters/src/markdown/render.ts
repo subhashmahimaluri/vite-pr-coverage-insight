@@ -28,6 +28,8 @@ export type RenderMarkdownOptions = {
   visuals?: 'images' | 'mermaid' | 'text';
   /** raw URLs of the committed metric-band SVGs (images mode only) */
   badgeImages?: { light: string; dark: string };
+  /** small caption under the metric band, e.g. what the cards are measured against */
+  bandCaption?: string;
   /** GitHub's hard limit is 65536; default leaves headroom for AI sections */
   maxChars?: number;
 };
@@ -124,27 +126,6 @@ function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
-const SPARK_BLOCKS = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
-
-function sparkline(values: number[]): string {
-  if (values.length < 2) return '';
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min;
-  return values
-    .map((v) => SPARK_BLOCKS[span === 0 ? 3 : Math.round(((v - min) / span) * 7)])
-    .join('');
-}
-
-function trendFor(report: CoverageReport, metric: MetricKey): string {
-  const history = report.history;
-  if (!history || history.length < 2) return '';
-  const values = history
-    .map((point) => (metric === 'lines' ? point.lines : point[metric]))
-    .filter((v): v is number => typeof v === 'number');
-  return values.length >= 2 ? sparkline(values.slice(-12)) : '';
-}
-
 /** required thresholds known from policy violations and/or policyMeta */
 function requiredByMetric(report: CoverageReport): Partial<Record<MetricKey, number>> {
   const required: Partial<Record<MetricKey, number>> = { ...report.policyMeta?.thresholds };
@@ -172,13 +153,14 @@ function headerBlock(report: CoverageReport): string {
   return lines.join('\n');
 }
 
-function totalsSection(report: CoverageReport, withDeltas: boolean): string {
+/** counts column is dropped when the metric-band cards are shown — they carry covered/total */
+function totalsSection(report: CoverageReport, withDeltas: boolean, showCounts = true): string {
   const totals = report.totals;
   if (!totals) return '';
   const required = requiredByMetric(report);
 
-  const header = ['St.', 'Category', 'Percentage', 'Covered / Total'];
-  const align = [':-:', '---', '---', '---:'];
+  const header = ['St.', 'Category', 'Percentage', ...(showCounts ? ['Covered / Total'] : [])];
+  const align = [':-:', '---', '---', ...(showCounts ? ['---:'] : [])];
   const lines = [`| ${header.join(' | ')} |`, `| ${align.join(' | ')} |`];
 
   for (const key of METRIC_KEYS) {
@@ -190,7 +172,12 @@ function totalsSection(report: CoverageReport, withDeltas: boolean): string {
       (req !== undefined ? ` — required ${req}%` : '');
     const counts =
       m.covered !== undefined && m.total !== undefined ? `${m.covered}/${m.total}` : '';
-    const cells = [statusIcon(m.head, req), METRIC_LABELS[key], pct, counts];
+    const cells = [
+      statusIcon(m.head, req),
+      METRIC_LABELS[key],
+      pct,
+      ...(showCounts ? [counts] : []),
+    ];
     lines.push(`| ${cells.join(' | ')} |`);
   }
   return lines.join('\n');
@@ -436,13 +423,7 @@ function failedTestsSection(report: CoverageReport): string {
   const failures = report.testFailures;
   if (!failures || failures.numFailedTests === 0) return '';
 
-  const total = failures.numTotalTests;
-  const passed = Math.max(0, total - failures.numFailedTests);
-  const summary =
-    total > 0
-      ? `${failures.numFailedTests} failed · ${passed} passed · ${total} total`
-      : plural(failures.numFailedTests, 'test') + ' failed';
-  const lines = [`### Failed suites — _${summary}_`, ''];
+  const lines = [`### ❌ Failed tests`, ''];
 
   const bySuite = new Map<string, typeof failures.failedTests>();
   for (const failure of failures.failedTests) {
@@ -474,21 +455,14 @@ function failedTestsSection(report: CoverageReport): string {
   return lines.join('\n').trimEnd();
 }
 
-const PARTIAL_BANNER =
-  '> [!WARNING]\n> Coverage shown below is partial — computed from the failed run. Gate evaluation deferred until tests pass.';
-
-function partialCoverageSection(report: CoverageReport, withDeltas: boolean): string {
-  const inner = [totalsSection(report, withDeltas), changedFilesSection(report, withDeltas)]
-    .filter(Boolean)
-    .join('\n\n');
-  if (!inner) return '';
+/** merge-blocked callout for the failure state */
+function testsFailedAlert(report: CoverageReport): string {
+  const failures = report.testFailures;
+  if (!failures || failures.numFailedTests === 0) return '';
+  const of = failures.numTotalTests > 0 ? ` of ${failures.numTotalTests}` : '';
   return [
-    '<details>',
-    '<summary>Partial coverage summary (informational only)</summary>',
-    '',
-    inner,
-    '',
-    '</details>',
+    '> [!CAUTION]',
+    `> **${plural(failures.numFailedTests, 'test')}${of} failed** — the check is marked \`failure\`, so the PR cannot merge until the test run passes.`,
   ].join('\n');
 }
 
@@ -639,12 +613,14 @@ type Section = {
 
 function metricBandSection(opts: RenderMarkdownOptions): string {
   if (opts.visuals !== 'images' || !opts.badgeImages) return '';
-  return [
+  const lines = [
     '<picture>',
     `  <source media="(prefers-color-scheme: dark)" srcset="${opts.badgeImages.dark}">`,
-    `  <img alt="coverage metrics: value, delta and 30-run trend per metric" src="${opts.badgeImages.light}">`,
+    `  <img alt="coverage metrics: value, covered/total, delta and trend per metric" src="${opts.badgeImages.light}">`,
     '</picture>',
-  ].join('\n');
+  ];
+  if (opts.bandCaption) lines.push('', `<sub>${opts.bandCaption}</sub>`);
+  return lines.join('\n');
 }
 
 function sectionsFor(
@@ -658,7 +634,14 @@ function sectionsFor(
     if (text) sections.push({ text, ...flags });
   };
 
-  push(metricBandSection(opts), { protected: true });
+  // base-branch history cards mislead in failure/error states — only the
+  // current PR's own numbers are shown there
+  const bandStates: ReportState[] = ['passed', 'no-change', 'threshold-failed', 'regression'];
+  const band = bandStates.includes(report.state) ? metricBandSection(opts) : '';
+  // when the cards are shown they carry covered/total — drop the table column
+  const showCounts = band === '';
+
+  push(band, { protected: true });
   push(stalenessNote(report), { protected: true });
 
   const deltaGroups = (withDeltasFlag: boolean) => {
@@ -677,37 +660,47 @@ function sectionsFor(
   switch (report.state) {
     case 'passed':
     case 'no-change':
-      push(totalsSection(report, true), { protected: true });
+      push(totalsSection(report, true, showCounts), { protected: true });
       deltaGroups(true);
       break;
 
     case 'threshold-failed':
       push(complianceSection(report), { protected: true });
       push(shortestPathSection(report), { protected: true });
-      push(totalsSection(report, true));
+      push(totalsSection(report, true, showCounts));
       deltaGroups(true);
       break;
 
     case 'regression':
       push(regressionsSection(report), { protected: true });
-      push(totalsSection(report, true));
+      push(totalsSection(report, true, showCounts));
       deltaGroups(true);
       break;
 
-    case 'tests-failed':
+    case 'tests-failed': {
+      push(testsFailedAlert(report), { protected: true });
       push(failedTestsSection(report), { protected: true });
-      push(totalsSection(report, false), { protected: true });
-      push(changedFilesSection(report, false), {
-        changedFiles: { files, withDeltas: false },
-      });
+      push(errorsSection(report), { protected: true });
+      // only this PR's own numbers — no base-branch band, no trend; with the
+      // head input broken (a failed run often writes no coverage) the zeroed
+      // totals would be noise, so they are skipped entirely
+      const headBroken = (report.errors ?? []).length > 0;
+      if (!headBroken) {
+        push("_Coverage from this PR's test run (gate deferred until tests pass):_");
+        push(totalsSection(report, false), { protected: true });
+        push(changedFilesSection(report, false), {
+          changedFiles: { files, withDeltas: false },
+        });
+      }
       break;
+    }
 
     case 'no-baseline':
       push(
         '> [!NOTE]\n> No baseline was found — absolute coverage only. Deltas will appear once the next baseline run records one.',
         { protected: true }
       );
-      push(totalsSection(report, false), { protected: true });
+      push(totalsSection(report, false, showCounts), { protected: true });
       deltaGroups(false);
       break;
 

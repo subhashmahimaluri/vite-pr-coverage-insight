@@ -147,3 +147,62 @@ export async function publishBaseline(params: {
 
   return { createdBranch: !tipSha, pruned, entryPath: baselinePath(sha) };
 }
+
+/**
+ * Commits a small set of files onto an existing branch (used for per-PR badge
+ * SVGs on the baseline branch). No-ops when every file already has identical
+ * content; retries once when a concurrent run moved the ref.
+ */
+export async function commitBranchFiles(params: {
+  octokit: BaselineOctokit;
+  owner: string;
+  repo: string;
+  branch: string;
+  message: string;
+  files: { path: string; content: string }[];
+}): Promise<void> {
+  const { octokit, owner, repo, branch, message, files } = params;
+
+  const changed: typeof files = [];
+  for (const file of files) {
+    const existing = await readBranchFile(octokit, { owner, repo, branch, path: file.path });
+    if (existing !== file.content) changed.push(file);
+  }
+  if (changed.length === 0) return;
+
+  const attempt = async () => {
+    const { data: ref } = await octokit.rest.git.getRef({ owner, repo, ref: `heads/${branch}` });
+    const tipSha = ref.object.sha;
+    const { data: tipCommit } = await octokit.rest.git.getCommit({
+      owner,
+      repo,
+      commit_sha: tipSha,
+    });
+    const { data: newTree } = await octokit.rest.git.createTree({
+      owner,
+      repo,
+      base_tree: tipCommit.tree.sha,
+      tree: changed.map((f) => ({
+        path: f.path,
+        mode: '100644' as const,
+        type: 'blob' as const,
+        content: f.content,
+      })),
+    });
+    const { data: commit } = await octokit.rest.git.createCommit({
+      owner,
+      repo,
+      message,
+      tree: newTree.sha,
+      parents: [tipSha],
+    });
+    await octokit.rest.git.updateRef({ owner, repo, ref: `heads/${branch}`, sha: commit.sha });
+  };
+
+  try {
+    await attempt();
+  } catch {
+    // a concurrent run may have advanced the branch — retry once from the new tip
+    await attempt();
+  }
+}

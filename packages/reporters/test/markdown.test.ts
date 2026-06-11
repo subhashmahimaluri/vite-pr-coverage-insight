@@ -35,7 +35,7 @@ describe('renderMarkdown states', () => {
     expect(md).toMatchSnapshot();
   });
 
-  it('tests-failed: failures first, coverage marked partial', () => {
+  it('tests-failed: merge-blocked alert, named failures, PR-only coverage', () => {
     const md = renderMarkdown(
       report({
         testFailures: {
@@ -43,12 +43,48 @@ describe('renderMarkdown states', () => {
           numTotalTests: 5,
           failedTests: [{ testName: 'boom', filePath: 'src/a.test.ts' }],
         },
+      }),
+      {
+        visuals: 'images',
+        badgeImages: { light: 'https://raw.test/l.svg', dark: 'https://raw.test/d.svg' },
+      }
+    );
+    expect(md).toContain('🛑 Tests failed');
+    expect(md).toContain('[!CAUTION]');
+    expect(md).toContain('cannot merge');
+    expect(md).toContain('boom');
+    expect(md).toContain('src/a.test.ts');
+    // no failed·passed·total line — the per-suite spoilers carry the counts
+    expect(md).not.toContain('passed ·');
+    // base-branch visuals are hidden: only this PR's own numbers
+    expect(md).not.toContain('<picture>');
+    expect(md).not.toContain('mermaid');
+    expect(md).toContain("Coverage from this PR's test run");
+    expect(md).toMatchSnapshot();
+  });
+
+  it('tests-failed with a broken head input: failures headline + error, no zeroed totals', () => {
+    const md = renderMarkdown(
+      report({
+        head: model([]),
+        testFailures: {
+          numFailedTests: 2,
+          numTotalTests: 0,
+          failedTests: [{ testName: 'boom', filePath: 'src/a.test.ts' }],
+        },
+        errors: [
+          {
+            input: 'head',
+            message: 'ENOENT: no such file',
+            hint: 'enable coverage.reportOnFailure',
+          },
+        ],
       })
     );
     expect(md).toContain('🛑 Tests failed');
     expect(md).toContain('boom');
-    expect(md).not.toContain('partial');
-    expect(md).toMatchSnapshot();
+    expect(md).toContain('ENOENT');
+    expect(md).not.toContain("Coverage from this PR's test run");
   });
 
   it('regression: severity badges', () => {

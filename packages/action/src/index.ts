@@ -1,6 +1,6 @@
 import * as cache from '@actions/cache';
 import { getInput, info, setFailed, warning } from '@actions/core';
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import { context, getOctokit } from '@actions/github';
 import fs from 'fs';
 import path from 'path';
@@ -28,12 +28,14 @@ import {
   badgeFiles,
   entriesToSeries,
   metricBandPath,
+  prMetricBandPath,
   readHistoryEntries,
   renderMetricBandSvg,
+  type HistoryPoint,
 } from '@coverage-insight/history';
 import { runAiSections } from './aiSections';
 import { collectAnnotations, type AnnotationsMode } from './annotations';
-import { publishBaseline } from './baseline/publish';
+import { commitBranchFiles, publishBaseline } from './baseline/publish';
 import { getMergeBaseSha, resolveBaseline } from './baseline/resolve';
 import {
   BaselineOctokit,
@@ -43,6 +45,7 @@ import {
 } from './baseline/store';
 import { readCoverageInput, relativizeSummary } from './mergeCoverage';
 import { parseTestFailures } from './parseTestFailures';
+import { parsePassingCounts, parseTestOutput } from './parseTestOutput';
 import { postCoverageReport } from './postCoverageReport';
 
 const CACHE_DIR = '.coverage-insight';
@@ -124,7 +127,7 @@ async function runBaselineMode(): Promise<void> {
 
 async function runReportMode(): Promise<void> {
   const script = getInput('run-script');
-  const scriptExitCode = script ? runScript(script) : 0;
+  const scriptResult = script ? runScript(script) : { code: 0, output: '' };
 
   const githubToken = getInput('github-token', { required: true });
   const basePath = getInput('base');
@@ -165,18 +168,36 @@ async function runReportMode(): Promise<void> {
   if (testFailuresPath) {
     testFailures = parseTestFailures(path.resolve(testFailuresPath));
   }
-  // run-script failed but no failures file: still report failure mode (state 3)
-  if (scriptExitCode !== 0 && (!testFailures || testFailures.numFailedTests === 0)) {
-    testFailures = {
-      numFailedTests: 1,
-      numTotalTests: testFailures?.numTotalTests ?? 0,
-      failedTests: [
-        {
-          testName: `Test run exited with code ${scriptExitCode} — see the CI log for details (provide the test-failures input for a per-test breakdown)`,
-          filePath: script,
-        },
-      ],
-    };
+  // run-script failed but no failures file: recover the failed test names from
+  // the captured output (vitest/jest) so the comment can say *which* tests
+  if (scriptResult.code !== 0 && (!testFailures || testFailures.numFailedTests === 0)) {
+    const parsed = parseTestOutput(scriptResult.output);
+    if (parsed.failures) {
+      testFailures = parsed.failures;
+    } else if (parsed.coverageThresholdErrors.length > 0) {
+      // not a test failure — the runner's own coverage gate tripped
+      errors.push({
+        input: 'run-script',
+        message: `\`${script}\` exited with code ${scriptResult.code}: ${parsed.coverageThresholdErrors.join(' · ')}`,
+        hint: "your test runner's own coverage thresholds failed — raise coverage, or move the gate into coverage-insight.config.json and remove it from the runner config",
+      });
+    } else {
+      testFailures = {
+        numFailedTests: 1,
+        numTotalTests: 0,
+        failedTests: [
+          {
+            testName: `Command exited with code ${scriptResult.code}`,
+            filePath: script,
+            ...(parsed.tail ? { message: parsed.tail } : {}),
+          },
+        ],
+      };
+    }
+  }
+  // passing run: surface "N tests passing" in the comment
+  if (scriptResult.code === 0 && !testFailures && scriptResult.output) {
+    testFailures = parsePassingCounts(scriptResult.output);
   }
 
   // base: explicit input (v1, D4) wins over the baseline store (Stage 2.2)
@@ -250,12 +271,14 @@ async function runReportMode(): Promise<void> {
 
   // trend history for the report/HTML (best effort)
   let history: BuildReportInput['history'];
+  let historySeries: HistoryPoint[] = [];
   try {
     const entries = await readHistoryEntries((p) =>
       readBranchFile(octokit, { owner, repo, branch: baselineBranch, path: p })
     );
     if (entries.length > 0) {
-      history = entriesToSeries(entries).map((point) => ({
+      historySeries = entriesToSeries(entries);
+      history = historySeries.map((point) => ({
         sha: point.sha,
         timestamp: point.timestamp,
         lines: point.metrics.lines,
@@ -304,13 +327,64 @@ async function runReportMode(): Promise<void> {
       visuals = 'mermaid';
     }
   }
-  const badgeImages =
-    visuals === 'images' && history && history.length > 0
-      ? {
-          light: `https://raw.githubusercontent.com/${owner}/${repo}/${baselineBranch}/${metricBandPath('light')}`,
-          dark: `https://raw.githubusercontent.com/${owner}/${repo}/${baselineBranch}/${metricBandPath('dark')}`,
-        }
-      : undefined;
+  // metric-band cards. Preferred: a *live* per-PR band — the head run appended
+  // to the history series, so values/deltas/covered-totals are this PR's, not
+  // the base branch's. Needs `contents: write`; falls back to the static
+  // base-branch band (and a caption saying so) when the commit is not possible.
+  const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/${baselineBranch}`;
+  let badgeImages: { light: string; dark: string } | undefined;
+  let bandCaption: string | undefined;
+  if (visuals === 'images' && historySeries.length > 0) {
+    badgeImages = {
+      light: `${rawBase}/${metricBandPath('light')}`,
+      dark: `${rawBase}/${metricBandPath('dark')}`,
+    };
+    bandCaption = `Base branch coverage — last ${Math.min(historySeries.length, 30)} baseline runs`;
+    if (head) {
+      try {
+        const headPoint: HistoryPoint = {
+          sha: context.payload.pull_request?.head?.sha ?? `pr-${prNumber}`,
+          metrics: {
+            statements: head.total.statements.pct,
+            branches: head.total.branches.pct,
+            functions: head.total.functions.pct,
+            lines: head.total.lines.pct,
+          },
+          counts: {
+            statements: {
+              covered: head.total.statements.covered,
+              total: head.total.statements.total,
+            },
+            branches: { covered: head.total.branches.covered, total: head.total.branches.total },
+            functions: { covered: head.total.functions.covered, total: head.total.functions.total },
+            lines: { covered: head.total.lines.covered, total: head.total.lines.total },
+          },
+        };
+        const prSeries = [...historySeries, headPoint];
+        await commitBranchFiles({
+          octokit,
+          owner,
+          repo,
+          branch: baselineBranch,
+          message: `pr #${prNumber} metric band (${headPoint.sha.slice(0, 7)})`,
+          files: (['light', 'dark'] as const).map((theme) => ({
+            path: prMetricBandPath(prNumber, theme),
+            content: renderMetricBandSvg(prSeries, theme),
+          })),
+        });
+        const bust = `?v=${headPoint.sha.slice(0, 7)}`; // unique camo URL per run
+        badgeImages = {
+          light: `${rawBase}/${prMetricBandPath(prNumber, 'light')}${bust}`,
+          dark: `${rawBase}/${prMetricBandPath(prNumber, 'dark')}${bust}`,
+        };
+        bandCaption = 'This PR vs the base branch — delta against the latest baseline';
+      } catch (error) {
+        console.warn(
+          `⚠️ Live PR metric band skipped (grant \`contents: write\` to enable): ${error}`
+        );
+      }
+    }
+  }
 
   const report = buildReport({
     head: head ?? { total: emptyTotals(), files: [] },
@@ -346,7 +420,7 @@ async function runReportMode(): Promise<void> {
     fs.writeFileSync(AI_AUDIT, ai.auditJson);
   }
 
-  const markdown = renderMarkdown(report, { visuals, badgeImages }) + ai.sections;
+  const markdown = renderMarkdown(report, { visuals, badgeImages, bandCaption }) + ai.sections;
 
   const testsFailed = (testFailures?.numFailedTests ?? 0) > 0;
   let conclusion: 'success' | 'failure' | 'neutral' =
@@ -369,18 +443,23 @@ async function runReportMode(): Promise<void> {
     console.log(`🏷️ Publishing ${annotations.length} diff annotation(s) via the check run`);
   }
 
-  await postCoverageReport({
-    token: githubToken,
-    owner,
-    repo,
-    prNumber,
-    markdown,
-    useCheckRun,
-    conclusion,
-    annotations,
-  });
-
-  console.log(`✅ Coverage report posted (state: ${report.state}, verdict: ${policy.verdict})`);
+  // posting must never mask the verdict below — a failed test run has to fail
+  // the job even when the comment/check API call itself errors
+  try {
+    await postCoverageReport({
+      token: githubToken,
+      owner,
+      repo,
+      prNumber,
+      markdown,
+      useCheckRun,
+      conclusion,
+      annotations,
+    });
+    console.log(`✅ Coverage report posted (state: ${report.state}, verdict: ${policy.verdict})`);
+  } catch (error) {
+    console.error(`❌ Posting the coverage report failed: ${error}`);
+  }
 
   if (testFailures && testFailures.numFailedTests > 0) {
     console.warn(`⚠️ ${testFailures.numFailedTests} tests failed`);
@@ -454,18 +533,27 @@ async function restoreBaselineFromCache(sha: string): Promise<string | null> {
   }
 }
 
-/** Run an arbitrary shell command, streaming its output to the action log. Returns the exit code. */
-function runScript(script: string): number {
+/**
+ * Run an arbitrary shell command. Output is captured (so failed test names can
+ * be parsed out of it) and echoed to the action log afterwards.
+ */
+function runScript(script: string): { code: number; output: string } {
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
   info(`▶ Running: ${script}`);
-  try {
-    execSync(script, { stdio: 'inherit', cwd: workspace });
-    return 0;
-  } catch (error: unknown) {
-    const code = (error as NodeJS.ErrnoException & { status?: number }).status ?? 1;
+  const result = spawnSync(script, {
+    shell: true,
+    cwd: workspace,
+    encoding: 'utf-8',
+    maxBuffer: 64 * 1024 * 1024,
+    env: process.env,
+  });
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+  if (output) process.stdout.write(output);
+  const code = result.status ?? (result.error ? 1 : 0);
+  if (code !== 0) {
     warning(`run-script exited with code ${code} — posting coverage report anyway`);
-    return code;
   }
+  return { code, output };
 }
 
 run();

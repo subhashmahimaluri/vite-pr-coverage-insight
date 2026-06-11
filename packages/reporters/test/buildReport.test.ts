@@ -43,12 +43,19 @@ describe('buildReport state classification (priority order)', () => {
     expect(build({ base: null, baseline: null }).state).toBe('no-baseline');
   });
 
-  it('state 6: invalid-data wins over everything', () => {
+  it('state 6: invalid-data wins over everything except failed tests', () => {
     const report = build({
       errors: [{ input: 'head', message: 'corrupt JSON', hint: 'check the path' }],
-      testFailures: { numFailedTests: 1, numTotalTests: 5, failedTests: [] },
     });
     expect(report.state).toBe('invalid-data');
+  });
+
+  it('tests-failed beats invalid-data — a failing run often writes no coverage', () => {
+    const report = build({
+      errors: [{ input: 'head', message: 'ENOENT', hint: 'check the path' }],
+      testFailures: { numFailedTests: 1, numTotalTests: 5, failedTests: [] },
+    });
+    expect(report.state).toBe('tests-failed');
   });
 
   it('state 7: no-change when every delta is zero', () => {

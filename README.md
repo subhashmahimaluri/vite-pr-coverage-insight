@@ -78,8 +78,9 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write # live per-PR metric-band images (degrades gracefully if read-only)
   pull-requests: write
+  checks: write # diff annotations + check run
 
 concurrency:
   group: pr-coverage-${{ github.event.pull_request.number }}
@@ -95,12 +96,12 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Run tests with coverage (HEAD only)
-        run: npm test -- --coverage
-        continue-on-error: true
       - uses: subhashmahimaluri/vite-pr-coverage-insight@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          # let the action run the tests: on failure it parses the failed test
+          # names from the output, posts the failure report and fails the job
+          run-script: npm test -- --coverage
           head: coverage/coverage-summary.json
           # no `base:` — resolved from the baseline store automatically
       - uses: actions/upload-artifact@v4
@@ -113,12 +114,13 @@ jobs:
           if-no-files-found: warn
 ```
 
-Your test runner must emit a coverage file. For vitest:
+Your test runner must emit a coverage file — **including on failing runs**, so
+the failure report can still show coverage. For vitest:
 
 ```ts
 // vitest.config.ts
 export default defineConfig({
-  test: { coverage: { reporter: ['text', 'json-summary'] } },
+  test: { coverage: { reporter: ['text', 'json-summary'], reportOnFailure: true } },
 });
 ```
 
@@ -130,19 +132,20 @@ live in [examples/workflows/](examples/workflows/).
 
 ## Inputs
 
-| Input             | Description                                                                        | Required | Default             |
-| ----------------- | ---------------------------------------------------------------------------------- | -------- | ------------------- |
-| `github-token`    | GitHub token for the PR comment / check run                                        | Yes      | -                   |
-| `mode`            | `report` posts the PR comment; `baseline` publishes coverage on main pushes        | No       | `report`            |
-| `head`            | PR coverage file (any supported format), **or a directory of shard summaries**     | Yes\*    | -                   |
-| `base`            | Base coverage file — omit to auto-resolve from the baseline store                  | No       | auto-resolved       |
-| `coverage`        | Coverage file for `baseline` mode (falls back to `head`)                           | No       | -                   |
-| `baseline-branch` | Orphan branch used as the baseline/history store                                   | No       | `coverage-baseline` |
-| `test-failures`   | Path to test failures JSON file                                                    | No       | -                   |
-| `use-check-run`   | Also publish a GitHub Check Run (conclusion follows the policy verdict)            | No       | `false`             |
-| `annotations`     | Diff annotations: `all` \| `coverage` \| `failed-tests` \| `none`                  | No       | `all`               |
-| `ai`              | `off` \| `comment` \| `review` — see [AI assistance](#ai-assistance-optional)      | No       | `off`               |
-| `ai-can-block`    | Only with `ai: review` — allow a high-risk AI verdict to set the check run neutral | No       | `false`             |
+| Input             | Description                                                                                                       | Required | Default             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------- | -------- | ------------------- |
+| `github-token`    | GitHub token for the PR comment / check run                                                                       | Yes      | -                   |
+| `mode`            | `report` posts the PR comment; `baseline` publishes coverage on main pushes                                       | No       | `report`            |
+| `head`            | PR coverage file (any supported format), **or a directory of shard summaries**                                    | Yes\*    | -                   |
+| `base`            | Base coverage file — omit to auto-resolve from the baseline store                                                 | No       | auto-resolved       |
+| `coverage`        | Coverage file for `baseline` mode (falls back to `head`)                                                          | No       | -                   |
+| `baseline-branch` | Orphan branch used as the baseline/history store                                                                  | No       | `coverage-baseline` |
+| `run-script`      | Test command the action runs first; on failure the failed test names are parsed from the output and the job fails | No       | -                   |
+| `test-failures`   | Path to a test-failures JSON file (full per-test detail incl. error messages)                                     | No       | -                   |
+| `use-check-run`   | Also publish a GitHub Check Run (conclusion follows the policy verdict)                                           | No       | `false`             |
+| `annotations`     | Diff annotations: `all` \| `coverage` \| `failed-tests` \| `none`                                                 | No       | `all`               |
+| `ai`              | `off` \| `comment` \| `review` — see [AI assistance](#ai-assistance-optional)                                     | No       | `off`               |
+| `ai-can-block`    | Only with `ai: review` — allow a high-risk AI verdict to set the check run neutral                                | No       | `false`             |
 
 \* required in `report` mode. Explicit `base:` works exactly as in v1 and
 overrides baseline resolution.
@@ -290,9 +293,14 @@ directory as `head:`), docs-only PR path filters.
 ```
 
 Generate it from your runner's JSON output — see
-[examples/extract-test-failures.js](examples/extract-test-failures.js). When
-present and failing, the comment leads with the failures and defers the gate
-(coverage is marked partial).
+[examples/extract-test-failures.js](examples/extract-test-failures.js).
+
+With `run-script` this file is optional: when the command fails, the action
+parses the failed test names straight from the vitest/jest output. Either way
+a failing run posts a failures-first report (named tests, this PR's coverage
+only), marks the job **failed**, and — with branch protection — blocks the
+merge until tests pass. Provide `test-failures` when you also want the error
+message excerpts under each failed test.
 
 ## Security
 

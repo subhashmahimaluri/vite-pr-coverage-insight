@@ -149,9 +149,11 @@ const RATCHET_RULES = new Set(['ratchet-total', 'ratchet-file']);
 
 /**
  * State classification — documented priority order (highest wins):
- *   1. invalid-data     errors nonempty
- *   2. monorepo         projects nonempty
- *   3. tests-failed     testFailures.numFailedTests > 0
+ *   1. tests-failed     testFailures.numFailedTests > 0 — failed tests are the
+ *                       headline even when inputs are also broken (a failing
+ *                       run often produces no coverage file at all)
+ *   2. invalid-data     errors nonempty
+ *   3. monorepo         projects nonempty
  *   4. no-baseline      no base model
  *   5. threshold-failed policy.verdict === 'fail' with a threshold/override violation
  *   6. regression       any file metric delta < 0, or any ratchet violation
@@ -164,9 +166,9 @@ function classifyState(
   totals: Record<MetricKey, MetricDelta>,
   files: FileReport[]
 ): ReportState {
+  if (input.testFailures && input.testFailures.numFailedTests > 0) return 'tests-failed';
   if (input.errors && input.errors.length > 0) return 'invalid-data';
   if (input.projects && input.projects.length > 0) return 'monorepo';
-  if (input.testFailures && input.testFailures.numFailedTests > 0) return 'tests-failed';
   if (!base) return 'no-baseline';
 
   const violations = input.policy?.violations ?? [];

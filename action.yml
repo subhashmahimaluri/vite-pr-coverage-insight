@@ -31,7 +31,7 @@ inputs:
     default: 'false'
   run-script:
     required: false
-    description: 'Shell command to run tests with coverage before reading the coverage file (e.g. npm run test:coverage). Output is streamed to the action log; the action continues even if the script exits non-zero so the report still posts.'
+    description: 'Shell command to run tests with coverage before reading the coverage file (e.g. npm run test:coverage). On a non-zero exit the report still posts: failed test names are parsed from the output (vitest/jest), the comment enters the tests-failed state and the job is marked failed so the PR cannot merge.'
   test-failures:
     required: false
     description: 'Path to test failures JSON file'
