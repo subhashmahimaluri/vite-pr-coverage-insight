@@ -569,6 +569,10 @@ function emptyTotals(): CoverageModel['total'] {
  * truth, so skipping is always safe.
  */
 function cacheAvailable(verb: string): boolean {
+  if ((getInput('cache') || 'on') === 'off') {
+    console.log(`ℹ️ Baseline cache ${verb} skipped (cache: off)`);
+    return false;
+  }
   try {
     if (cache.isFeatureAvailable()) return true;
   } catch {

@@ -21,6 +21,10 @@ inputs:
     required: false
     description: 'Orphan branch used as the baseline/history store'
     default: 'coverage-baseline'
+  cache:
+    required: false
+    description: "Actions cache acceleration for baseline lookups: 'on' (default) or 'off'. The baseline branch remains the source of truth, so 'off' only costs one extra API read — use it if the cache service is flaky on your runners."
+    default: 'on'
   thresholds:
     required: false
     description: "Coverage gate enforced by the action: a number for all metrics ('80'), per-metric pairs ('lines:85, branches:75') or JSON. Overrides coverage-insight.config.json. When unmet the job fails with a compliance table; without it the action only reports."
