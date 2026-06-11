@@ -116,6 +116,8 @@ export const coverageReportSchema = z.object({
   baseline: baselineMetaSchema.nullable().optional(),
   projects: z.array(projectReportSchema).optional(), // state 8 only
   errors: z.array(inputErrorSchema).optional(), // state 6
+  /** non-fatal notices shown as a warning banner — never affect state or the job */
+  warnings: z.array(z.string()).optional(),
   /** policy context for the header line (description + config source + thresholds) */
   policyMeta: z
     .object({

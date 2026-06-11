@@ -104,6 +104,8 @@ jobs:
           run-script: npm test -- --coverage
           head: coverage/coverage-summary.json
           # no `base:` — resolved from the baseline store automatically
+          # optional gate — fails the job when a metric is below its threshold:
+          # thresholds: 'lines:85, branches:75'   (or just '80' for all metrics)
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -124,6 +126,14 @@ export default defineConfig({
 });
 ```
 
+> [!TIP]
+> Don't set `coverage.thresholds` in your **test runner's** config — a runner
+> threshold failure exits non-zero before the action can do its job. The
+> action treats that case as a warning (the report still posts and the job
+> passes). Put the gate where it belongs: the `thresholds` input above or
+> `coverage-insight.config.json` — then an unmet threshold fails the job with
+> a compliance table and the "shortest path to green".
+
 The very first PR before any baseline exists gets an absolute-numbers report
 ("Baseline recorded"); every PR after a main-branch run shows full deltas.
 Migrating from v1's two-run setup? See
@@ -141,6 +151,7 @@ live in [examples/workflows/](examples/workflows/).
 | `coverage`        | Coverage file for `baseline` mode (falls back to `head`)                                                          | No       | -                   |
 | `baseline-branch` | Orphan branch used as the baseline/history store                                                                  | No       | `coverage-baseline` |
 | `run-script`      | Test command the action runs first; on failure the failed test names are parsed from the output and the job fails | No       | -                   |
+| `thresholds`      | Coverage gate: `'80'` (all metrics), `'lines:85, branches:75'` or JSON — overrides the config file                | No       | -                   |
 | `test-failures`   | Path to a test-failures JSON file (full per-test detail incl. error messages)                                     | No       | -                   |
 | `use-check-run`   | Also publish a GitHub Check Run (conclusion follows the policy verdict)                                           | No       | `false`             |
 | `annotations`     | Diff annotations: `all` \| `coverage` \| `failed-tests` \| `none`                                                 | No       | `all`               |

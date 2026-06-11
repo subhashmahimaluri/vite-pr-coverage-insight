@@ -193,6 +193,21 @@ describe('renderMarkdown cross-state rules', () => {
     }
   });
 
+  it('warnings render as a banner without changing the state', () => {
+    const md = renderMarkdown(
+      report({ warnings: ["The test runner's own coverage thresholds are not met: lines 87.2%"] })
+    );
+    expect(md).toContain('✅ Coverage gate passed');
+    expect(md).toContain('[!WARNING]');
+    expect(md).toContain('thresholds are not met');
+  });
+
+  it('warnings survive the minimal no-change comment', () => {
+    const md = renderMarkdown(report({ head: base, warnings: ['exited 1 but tests passed'] }));
+    expect(md).toContain('✅ Coverage unchanged');
+    expect(md).toContain('[!WARNING]');
+  });
+
   it('staleness note appears when the baseline is behind', () => {
     const md = renderMarkdown(report({ baseline: { ...baselineMeta, staleness: 3 } }));
     expect(md).toContain('3 commits behind');

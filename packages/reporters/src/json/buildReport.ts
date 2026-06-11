@@ -48,6 +48,8 @@ export type BuildReportInput = {
   projects?: ProjectReport[];
   /** state 6 only — input errors */
   errors?: InputError[];
+  /** non-fatal notices (e.g. the runner's own coverage thresholds) — never change state */
+  warnings?: string[];
   /** history series for sparklines, newest last */
   history?: HistoryPoint[];
   /** repo-relative paths changed in the PR's git diff — marks FileReport.touched */
@@ -218,6 +220,7 @@ export function buildReport(input: BuildReportInput): CoverageReport {
     ...(input.baseline !== undefined ? { baseline: input.baseline } : {}),
     ...(input.projects ? { projects: input.projects } : {}),
     ...(input.errors ? { errors: input.errors } : {}),
+    ...(input.warnings && input.warnings.length > 0 ? { warnings: input.warnings } : {}),
     ...(input.history ? { history: input.history } : {}),
   };
 

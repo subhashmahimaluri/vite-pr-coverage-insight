@@ -46,6 +46,7 @@ import {
 import { readCoverageInput, relativizeSummary } from './mergeCoverage';
 import { parseTestFailures } from './parseTestFailures';
 import { parsePassingCounts, parseTestOutput } from './parseTestOutput';
+import { parseThresholdsInput } from './parseThresholds';
 import { postCoverageReport } from './postCoverageReport';
 
 const CACHE_DIR = '.coverage-insight';
@@ -146,11 +147,27 @@ async function runReportMode(): Promise<void> {
 
   const octokit = getOctokit(githubToken) as unknown as BaselineOctokit;
 
+  const errors: InputError[] = [];
+
   // config: file < action inputs (Stage 3.1 precedence)
   const loaded = await loadConfig(workspace);
-  const config = applyInputOverrides(loaded.config, aiInput ? { ai: aiInput } : {});
-
-  const errors: InputError[] = [];
+  let thresholdsOverride: ReturnType<typeof parseThresholdsInput> | undefined;
+  const thresholdsInput = getInput('thresholds');
+  if (thresholdsInput) {
+    try {
+      thresholdsOverride = parseThresholdsInput(thresholdsInput);
+    } catch (error) {
+      errors.push({
+        input: 'thresholds',
+        message: error instanceof Error ? error.message : String(error),
+        hint: "examples: '80' · 'lines:85, branches:75' · '{\"lines\":85}'",
+      });
+    }
+  }
+  const config = applyInputOverrides(loaded.config, {
+    ...(aiInput ? { ai: aiInput } : {}),
+    ...(thresholdsOverride ? { thresholds: thresholdsOverride } : {}),
+  });
 
   // head coverage (file, shard directory, or any supported format)
   let head: CoverageModel | null = null;
@@ -169,18 +186,27 @@ async function runReportMode(): Promise<void> {
     testFailures = parseTestFailures(path.resolve(testFailuresPath));
   }
   // run-script failed but no failures file: recover the failed test names from
-  // the captured output (vitest/jest) so the comment can say *which* tests
+  // the captured output (vitest/jest) so the comment can say *which* tests.
+  // Only actual test failures fail the job — the runner's own coverage
+  // thresholds (or other non-test exit codes with a passing test summary)
+  // surface as warnings and the report renders as usual.
+  const warnings: string[] = [];
   if (scriptResult.code !== 0 && (!testFailures || testFailures.numFailedTests === 0)) {
     const parsed = parseTestOutput(scriptResult.output);
+    const passing = parsePassingCounts(scriptResult.output);
     if (parsed.failures) {
       testFailures = parsed.failures;
     } else if (parsed.coverageThresholdErrors.length > 0) {
-      // not a test failure — the runner's own coverage gate tripped
-      errors.push({
-        input: 'run-script',
-        message: `\`${script}\` exited with code ${scriptResult.code}: ${parsed.coverageThresholdErrors.join(' · ')}`,
-        hint: "your test runner's own coverage thresholds failed — raise coverage, or move the gate into coverage-insight.config.json and remove it from the runner config",
-      });
+      testFailures = passing;
+      warnings.push(
+        `The test runner's own coverage thresholds are not met (informational — set the \`thresholds\` input or coverage-insight.config.json to make this gate the merge): ${parsed.coverageThresholdErrors.join(' · ')}`
+      );
+      info('runner coverage thresholds not met — reported as a warning, job not failed');
+    } else if (passing) {
+      testFailures = passing;
+      warnings.push(
+        `\`${script}\` exited with code ${scriptResult.code} although all ${passing.numTotalTests} tests passed — see the CI log.`
+      );
     } else {
       testFailures = {
         numFailedTests: 1,
@@ -399,6 +425,7 @@ async function runReportMode(): Promise<void> {
     ...(touchedFiles ? { touchedFiles } : {}),
     ...(projects ? { projects } : {}),
     ...(errors.length > 0 ? { errors } : {}),
+    ...(warnings.length > 0 ? { warnings } : {}),
     ...(history ? { history } : {}),
   });
 

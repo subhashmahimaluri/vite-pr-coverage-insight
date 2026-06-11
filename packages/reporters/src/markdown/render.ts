@@ -313,6 +313,13 @@ function fullFilesSection(report: CoverageReport, withDeltas: boolean): string {
   return spoilerTable(report, '📋 Full coverage table', files, withDeltas, 100);
 }
 
+/** non-fatal notices (runner thresholds, odd exit codes) — informational only */
+function warningsSection(report: CoverageReport): string {
+  const warnings = report.warnings ?? [];
+  if (warnings.length === 0) return '';
+  return ['> [!WARNING]', ...warnings.map((w) => `> ${w}`)].join('\n>\n');
+}
+
 function stalenessNote(report: CoverageReport): string {
   const baseline = report.baseline;
   if (!baseline || baseline.staleness <= 0) return '';
@@ -641,6 +648,7 @@ function sectionsFor(
   // when the cards are shown they carry covered/total — drop the table column
   const showCounts = band === '';
 
+  push(warningsSection(report), { protected: true });
   push(band, { protected: true });
   push(stalenessNote(report), { protected: true });
 
@@ -725,7 +733,10 @@ export function renderMarkdown(report: CoverageReport, opts: RenderMarkdownOptio
 
   // state 7 — single-line minimal comment
   if (report.state === 'no-change') {
-    return `${COMMENT_MARKER}\n${HEADERS['no-change']}`;
+    const warningBlock = warningsSection(report);
+    return [`${COMMENT_MARKER}\n${HEADERS['no-change']}`, warningBlock]
+      .filter(Boolean)
+      .join('\n\n');
   }
 
   const withDeltas = report.baseline !== null || (report.totals?.lines.base ?? null) !== null;
