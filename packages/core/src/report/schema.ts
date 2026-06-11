@@ -33,12 +33,17 @@ export const metricDeltaSchema = z.object({
   base: z.number().nullable(), // null when no baseline
   head: z.number(),
   delta: z.number().nullable(),
+  /** head counts — power "N uncovered" and shortest-path-to-green math */
+  covered: z.number().int().optional(),
+  total: z.number().int().optional(),
 });
 
 export const fileReportSchema = z.object({
   path: z.string(),
   /** 'new' | 'modified' | 'unchanged' relative to baseline */
   change: z.enum(['new', 'modified', 'unchanged']),
+  /** true when the file is part of the PR's git diff (set when known) */
+  touched: z.boolean().optional(),
   metrics: z.record(metricKeySchema, metricDeltaSchema),
   uncoveredRanges: z.array(z.object({ start: z.number().int(), end: z.number().int() })).optional(),
 });
@@ -60,7 +65,14 @@ export const policyResultSchema = z.object({
 export const testFailuresSchema = z.object({
   numFailedTests: z.number().int(),
   numTotalTests: z.number().int(),
-  failedTests: z.array(z.object({ testName: z.string(), filePath: z.string() })),
+  failedTests: z.array(
+    z.object({
+      testName: z.string(),
+      filePath: z.string(),
+      /** error excerpt, truncated by the renderer */
+      message: z.string().optional(),
+    })
+  ),
 });
 
 export const baselineMetaSchema = z.object({
@@ -101,9 +113,26 @@ export const coverageReportSchema = z.object({
   baseline: baselineMetaSchema.nullable().optional(),
   projects: z.array(projectReportSchema).optional(), // state 8 only
   errors: z.array(inputErrorSchema).optional(), // state 6
+  /** policy context for the header line (description + config source + thresholds) */
+  policyMeta: z
+    .object({
+      description: z.string(),
+      source: z.string().optional(),
+      thresholds: z.partialRecord(metricKeySchema, z.number()).optional(),
+    })
+    .optional(),
   /** history series for sparklines, newest last */
   history: z
-    .array(z.object({ sha: z.string(), timestamp: z.string().optional(), lines: z.number() }))
+    .array(
+      z.object({
+        sha: z.string(),
+        timestamp: z.string().optional(),
+        lines: z.number(),
+        statements: z.number().optional(),
+        functions: z.number().optional(),
+        branches: z.number().optional(),
+      })
+    )
     .optional(),
   ai: z
     .object({

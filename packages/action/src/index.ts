@@ -7,6 +7,7 @@ import {
   applyInputOverrides,
   evaluatePolicy,
   loadConfig,
+  relativizeModel,
   summaryToModel,
   type Config,
   type CoverageModel,
@@ -32,7 +33,7 @@ import {
   cacheKey,
   readBranchFile,
 } from './baseline/store';
-import { readCoverageInput } from './mergeCoverage';
+import { readCoverageInput, relativizeSummary } from './mergeCoverage';
 import { parseTestFailures } from './parseTestFailures';
 import { postCoverageReport } from './postCoverageReport';
 
@@ -67,7 +68,8 @@ async function runBaselineMode(): Promise<void> {
   const coveragePath = getInput('coverage') || getInput('head', { required: true });
   const branch = getInput('baseline-branch') || DEFAULT_BASELINE_BRANCH;
 
-  const summary = readCoverageInput(coveragePath);
+  const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
+  const summary = relativizeSummary(readCoverageInput(coveragePath), workspace);
   const octokit = getOctokit(githubToken) as unknown as BaselineOctokit;
   const { owner, repo } = context.repo;
 
@@ -116,7 +118,7 @@ async function runReportMode(): Promise<void> {
   // head coverage (file, shard directory, or any supported format)
   let head: CoverageModel | null = null;
   try {
-    head = summaryToModel(readCoverageInput(headPath));
+    head = relativizeModel(summaryToModel(readCoverageInput(headPath)), workspace);
   } catch (error) {
     errors.push({
       input: 'head',
@@ -139,7 +141,7 @@ async function runReportMode(): Promise<void> {
         fs.readFileSync(path.resolve(basePath), 'utf-8')
       ) as CoverageSummary;
       if (!summary?.total) throw new Error("missing 'total' field");
-      base = summaryToModel(summary);
+      base = relativizeModel(summaryToModel(summary), workspace);
       baseline = { sha: 'explicit', source: 'input', staleness: 0 };
     } catch (error) {
       errors.push({
@@ -163,7 +165,11 @@ async function runReportMode(): Promise<void> {
           restoreCache: (sha) => restoreBaselineFromCache(sha),
         });
         if (resolved) {
-          base = summaryToModel(resolved.summary);
+          // older baselines may carry absolute runner paths — relativize both eras
+          base = relativizeModel(
+            summaryToModel(resolved.summary),
+            process.env.GITHUB_WORKSPACE ?? workspace
+          );
           baseline = resolved.meta;
           console.log(
             `ℹ️ Baseline resolved via ${resolved.meta.source} (${resolved.meta.sha.slice(0, 7)}, staleness ${resolved.meta.staleness})`
@@ -173,6 +179,26 @@ async function runReportMode(): Promise<void> {
         console.warn(`⚠️ Baseline resolution failed, reporting without a base: ${error}`);
       }
     }
+  }
+
+  // the PR's actual git diff — drives the "Files changed in this PR" table
+  let touchedFiles: string[] | undefined;
+  try {
+    const filenames: string[] = [];
+    for (let page = 1; page <= 3; page++) {
+      const { data } = await octokit.rest.pulls.listFiles({
+        owner,
+        repo,
+        pull_number: prNumber,
+        per_page: 100,
+        page,
+      });
+      filenames.push(...data.map((f) => f.filename));
+      if (data.length < 100) break;
+    }
+    touchedFiles = filenames;
+  } catch (error) {
+    console.warn(`⚠️ Could not read the PR file list (changed-files table degraded): ${error}`);
   }
 
   // trend history for the report/HTML (best effort)
@@ -186,6 +212,9 @@ async function runReportMode(): Promise<void> {
         sha: point.sha,
         timestamp: point.timestamp,
         lines: point.metrics.lines,
+        statements: point.metrics.statements,
+        functions: point.metrics.functions,
+        branches: point.metrics.branches,
       }));
     }
   } catch {
@@ -220,11 +249,13 @@ async function runReportMode(): Promise<void> {
     head: head ?? { total: emptyTotals(), files: [] },
     base,
     policy,
+    policyMeta: describePolicy(config, loaded.source),
     testFailures,
     baseline,
     repo: { owner, repo },
     pr: { number: prNumber, headSha: context.payload.pull_request?.head?.sha },
     generatedAt: new Date().toISOString(),
+    ...(touchedFiles ? { touchedFiles } : {}),
     ...(projects ? { projects } : {}),
     ...(errors.length > 0 ? { errors } : {}),
     ...(history ? { history } : {}),
@@ -278,6 +309,25 @@ async function runReportMode(): Promise<void> {
       `Coverage gate failed: ${policy.violations.length} violation(s) — see the PR comment`
     );
   }
+}
+
+/** header context, e.g. 'min lines 90% · ratchet' + the config source */
+function describePolicy(
+  config: Config,
+  source: string
+): { description: string; source?: string; thresholds?: Config['thresholds'] } {
+  const parts: string[] = [];
+  const thresholds = Object.entries(config.thresholds ?? {});
+  if (thresholds.length > 0) {
+    parts.push(`min ${thresholds.map(([metric, pct]) => `${metric} ${pct}%`).join(', ')}`);
+  }
+  if (config.ratchet) parts.push('ratchet');
+  if (parts.length === 0) parts.push('report-only');
+  return {
+    description: parts.join(' · '),
+    ...(source !== 'defaults' ? { source: source.replace(/^file:/, '') } : {}),
+    ...(config.thresholds ? { thresholds: config.thresholds } : {}),
+  };
 }
 
 function emptyTotals(): CoverageModel['total'] {

@@ -74,6 +74,25 @@ export function modelToSummary(model: CoverageModel): CoverageSummary {
   return summary;
 }
 
+/**
+ * Strips a workspace prefix from a path so reports show repo-relative paths
+ * (istanbul emits absolute runner paths like /home/runner/work/repo/repo/src/x.ts).
+ */
+export function relativizePath(filePath: string, root: string): string {
+  if (!root) return filePath;
+  const normalizedRoot = root.endsWith('/') ? root : `${root}/`;
+  return filePath.startsWith(normalizedRoot) ? filePath.slice(normalizedRoot.length) : filePath;
+}
+
+/** Returns a model whose file paths are relative to `root` (totals untouched). */
+export function relativizeModel(model: CoverageModel, root: string): CoverageModel {
+  if (!root) return model;
+  return {
+    total: model.total,
+    files: model.files.map((file) => ({ ...file, path: relativizePath(file.path, root) })),
+  };
+}
+
 function stripDetails(metric: CoverageMetric & { details?: unknown }): CoverageMetric {
   return {
     pct: metric.pct,

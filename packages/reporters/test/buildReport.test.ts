@@ -92,7 +92,7 @@ describe('buildReport output', () => {
     });
     const a = report.files!.find((f) => f.path === 'src/a.ts')!;
     expect(a.change).toBe('modified');
-    expect(a.metrics.lines).toEqual({ base: 80, head: 90, delta: 10 });
+    expect(a.metrics.lines).toMatchObject({ base: 80, head: 90, delta: 10, covered: 9, total: 10 });
     const fresh = report.files!.find((f) => f.path === 'src/new.ts')!;
     expect(fresh.change).toBe('new');
     expect(fresh.metrics.lines.base).toBeNull();
@@ -104,6 +104,22 @@ describe('buildReport output', () => {
       { start: 7, end: 7 },
       { start: 9, end: 9 },
     ]);
+  });
+
+  it('marks files from the PR diff as touched', () => {
+    const report = build({
+      head: model([
+        { path: 'src/a.ts', covered: 9, total: 10 },
+        { path: 'src/other.ts', covered: 5, total: 5 },
+      ]),
+      touchedFiles: ['src/a.ts', 'docs/readme.md'],
+    });
+    expect(report.files!.find((f) => f.path === 'src/a.ts')!.touched).toBe(true);
+    expect(report.files!.find((f) => f.path === 'src/other.ts')!.touched).toBe(false);
+  });
+
+  it('leaves touched undefined when the diff is unknown', () => {
+    expect(build().files![0].touched).toBeUndefined();
   });
 
   it('is deterministic for identical input', () => {

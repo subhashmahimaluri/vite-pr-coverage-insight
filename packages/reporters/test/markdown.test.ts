@@ -66,6 +66,42 @@ describe('renderMarkdown states', () => {
     expect(md).toMatchSnapshot();
   });
 
+  it('no-baseline without diff info: no all-new dump, full table stays collapsed', () => {
+    const md = renderMarkdown(
+      report({
+        head: model([
+          { path: 'src/a.ts', covered: 9, total: 10 },
+          { path: 'src/b.ts', covered: 5, total: 10 },
+        ]),
+        base: null,
+        baseline: null,
+      })
+    );
+    expect(md).not.toContain('### Changed files');
+    expect(md).not.toContain('Files changed in this PR');
+    expect(md).toContain('<summary>Full coverage table — 2 files</summary>');
+  });
+
+  it('changed-files table follows the PR diff when touched info exists', () => {
+    const md = renderMarkdown(
+      report({
+        head: model([
+          { path: 'src/a.ts', covered: 9, total: 10 },
+          { path: 'src/untouched.ts', covered: 5, total: 10 },
+        ]),
+        base: null,
+        baseline: null,
+        touchedFiles: ['src/a.ts'],
+      })
+    );
+    expect(md).toContain('### Files changed in this PR');
+    const table = md.split('### Files changed in this PR')[1].split('<details>')[0];
+    expect(table).toContain('src/a.ts');
+    expect(table).not.toContain('src/untouched.ts');
+    // the Change column is meaningless without a baseline
+    expect(table).not.toContain('| new |');
+  });
+
   it('invalid-data: input, problem and fix', () => {
     const md = renderMarkdown(
       report({
