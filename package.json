@@ -14,12 +14,16 @@
   "scripts": {
     "build": "npm run build -ws",
     "typecheck": "tsc -b",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@vercel/ncc": "^0.38.3",
+    "@vitest/coverage-v8": "^4.1.8",
     "tsx": "^4.20.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.8"
   }
 }
