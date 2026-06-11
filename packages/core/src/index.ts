@@ -4,5 +4,8 @@ export { formatCoverageMarkdown } from './formatMarkdown';
 export { generateCoverageReport } from './generateReport';
 export * from './model';
 export * from './config/schema';
+export * from './config/loader';
 export * from './policy/types';
+export * from './policy/engine';
 export * from './report/schema';
+export * from './parsers';
