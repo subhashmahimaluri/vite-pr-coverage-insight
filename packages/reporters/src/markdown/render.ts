@@ -183,7 +183,39 @@ function totalsSection(report: CoverageReport, withDeltas: boolean, showCounts =
   return lines.join('\n');
 }
 
-/** real rendered line chart in the comment via mermaid (GitHub renders it) */
+/** base-branch totals, shown inside the collapsible coverage report */
+function baseTotalsSection(report: CoverageReport): string {
+  const totals = report.totals;
+  if (!totals) return '';
+  const withBase = METRIC_KEYS.filter((key) => totals[key].base !== null);
+  if (withBase.length === 0) return '';
+  const lines = ['| St. | Category | Percentage |', '| :-: | --- | --- |'];
+  for (const key of withBase) {
+    const basePct = totals[key].base as number;
+    lines.push(`| ${statusIcon(basePct)} | ${METRIC_LABELS[key]} | **${fmtPct(basePct)}** |`);
+  }
+  return lines.join('\n');
+}
+
+/** one spoiler with both detailed tables: this PR first, then the base branch */
+function coverageTablesSpoiler(report: CoverageReport, withDeltas: boolean): string {
+  const current = totalsSection(report, withDeltas, true);
+  if (!current) return '';
+  const base = baseTotalsSection(report);
+  const lines = [
+    '<details>',
+    '<summary>📊 Coverage report — this PR vs base branch</summary>',
+    '',
+    '**Current PR**',
+    '',
+    current,
+  ];
+  if (base) lines.push('', '**Base branch**', '', base);
+  lines.push('', '</details>');
+  return lines.join('\n');
+}
+
+/** real rendered line chart via mermaid, collapsed (GitHub renders it on expand) */
 function trendChartSection(report: CoverageReport): string {
   const history = report.history ?? [];
   if (history.length < 2) return '';
@@ -192,7 +224,8 @@ function trendChartSection(report: CoverageReport): string {
   const values = points.map((p) => p.lines.toFixed(1)).join(', ');
   const min = Math.max(0, Math.floor(Math.min(...points.map((p) => p.lines)) - 5));
   return [
-    `### 📈 Coverage trend — lines % (last ${points.length} baselines)`,
+    '<details>',
+    `<summary>📈 Coverage trend — lines % (last ${points.length} baselines)</summary>`,
     '',
     '```mermaid',
     'xychart-beta',
@@ -200,6 +233,8 @@ function trendChartSection(report: CoverageReport): string {
     `  y-axis "lines %" ${min} --> 100`,
     `  line [${values}]`,
     '```',
+    '',
+    '</details>',
   ].join('\n');
 }
 
@@ -294,15 +329,16 @@ function changedFilesSection(
       ? files.filter((f) => f.change !== 'unchanged')
       : [];
   if (changed.length === 0) return '';
-  const title = hasTouchInfo
-    ? `### ✏️ Files changed in this PR (${changed.length} of ${files.length})`
-    : `### ✏️ Changed files (${changed.length} of ${files.length})`;
+  const summary = hasTouchInfo
+    ? `✏️ Files changed in this PR (${changed.length} of ${files.length})`
+    : `✏️ Changed files (${changed.length} of ${files.length})`;
   const shown = rowLimit !== undefined ? changed.slice(0, rowLimit) : changed;
-  const lines = [title, '', ...fileTableHeader()];
+  const lines = ['<details>', `<summary>${summary}</summary>`, '', ...fileTableHeader()];
   for (const file of shown) lines.push(fileRow(report, file, withDeltas));
   if (shown.length < changed.length) {
     lines.push('', `_…${changed.length - shown.length} more changed files omitted._`);
   }
+  lines.push('', '</details>');
   return lines.join('\n');
 }
 
@@ -665,23 +701,30 @@ function sectionsFor(
     push(testRunSection(report));
   };
 
+  // with the metric cards visible, the detailed tables collapse into one
+  // spoiler (this PR first, then base); without cards the PR table stays open
+  const detailTables = (withDeltasFlag: boolean) =>
+    band !== ''
+      ? coverageTablesSpoiler(report, withDeltasFlag)
+      : totalsSection(report, withDeltasFlag, showCounts);
+
   switch (report.state) {
     case 'passed':
     case 'no-change':
-      push(totalsSection(report, true, showCounts), { protected: true });
+      push(detailTables(true), { protected: true });
       deltaGroups(true);
       break;
 
     case 'threshold-failed':
       push(complianceSection(report), { protected: true });
       push(shortestPathSection(report), { protected: true });
-      push(totalsSection(report, true, showCounts));
+      push(detailTables(true));
       deltaGroups(true);
       break;
 
     case 'regression':
       push(regressionsSection(report), { protected: true });
-      push(totalsSection(report, true, showCounts));
+      push(detailTables(true));
       deltaGroups(true);
       break;
 

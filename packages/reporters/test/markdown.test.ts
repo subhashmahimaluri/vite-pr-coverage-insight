@@ -131,8 +131,8 @@ describe('renderMarkdown states', () => {
         touchedFiles: ['src/a.ts'],
       })
     );
-    expect(md).toContain('### ✏️ Files changed in this PR');
-    const table = md.split('### ✏️ Files changed in this PR')[1].split('<details>')[0];
+    expect(md).toContain('✏️ Files changed in this PR');
+    const table = md.split('✏️ Files changed in this PR')[1].split('</details>')[0];
     expect(table).toContain('src/a.ts');
     expect(table).not.toContain('src/untouched.ts');
     // the Change column is meaningless without a baseline
@@ -258,6 +258,14 @@ describe('visuals modes', () => {
     expect(md).toContain('prefers-color-scheme: dark');
     expect(md).toContain('https://raw.test/l.svg');
     expect(md).toContain('```mermaid');
+    // graphs are the only visible coverage block — tables collapse into one
+    // spoiler with the PR report first, then the base branch
+    expect(md).toContain('<summary>📊 Coverage report — this PR vs base branch</summary>');
+    const spoiler = md.split('📊 Coverage report')[1].split('</details>')[0];
+    expect(spoiler.indexOf('**Current PR**')).toBeLessThan(spoiler.indexOf('**Base branch**'));
+    // files-changed and the trend chart are collapsed too
+    expect(md).toMatch(/<summary>✏️ Changed files/);
+    expect(md).toMatch(/<summary>📈 Coverage trend/);
     expect(md).toMatchSnapshot();
   });
 

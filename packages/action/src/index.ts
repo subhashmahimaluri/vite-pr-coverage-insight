@@ -198,10 +198,18 @@ async function runReportMode(): Promise<void> {
       testFailures = parsed.failures;
     } else if (parsed.coverageThresholdErrors.length > 0) {
       testFailures = passing;
-      warnings.push(
-        `The test runner's own coverage thresholds are not met (informational — set the \`thresholds\` input or coverage-insight.config.json to make this gate the merge): ${parsed.coverageThresholdErrors.join(' · ')}`
-      );
-      info('runner coverage thresholds not met — reported as a warning, job not failed');
+      // when the consumer configured their own gate (input or config file),
+      // that gate is authoritative — the runner's thresholds are just noise
+      if (Object.keys(config.thresholds ?? {}).length > 0) {
+        info(
+          'runner coverage thresholds not met — ignored: the configured `thresholds` gate decides'
+        );
+      } else {
+        warnings.push(
+          `The test runner's own coverage thresholds are not met (informational — set the \`thresholds\` input or coverage-insight.config.json to make this gate the merge): ${parsed.coverageThresholdErrors.join(' · ')}`
+        );
+        info('runner coverage thresholds not met — reported as a warning, job not failed');
+      }
     } else if (passing) {
       testFailures = passing;
       warnings.push(

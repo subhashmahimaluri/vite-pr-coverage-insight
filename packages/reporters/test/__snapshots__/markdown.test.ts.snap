@@ -102,11 +102,14 @@ _PR #42_
 | 🟢 | Functions | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
 | 🟢 | Lines | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
 
-### ✏️ Changed files (1 of 1)
+<details>
+<summary>✏️ Changed files (1 of 1)</summary>
 
 | St. | File | Statements | Branches | Functions | Lines | Uncovered |
 | :-: | --- | ---: | ---: | ---: | ---: | --- |
 | 🟢 | \`src/a.ts\` | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 4 |
+
+</details>
 
 <details>
 <summary>📋 Full coverage table (1)</summary>
@@ -146,11 +149,14 @@ _Files where this PR reduced coverage. Ratchet policy treats these as violations
 | 🔴 | Functions | **20.0%** ($\\color{red}{\\textsf{-60.00\\%}}$ ▼) | 2/10 |
 | 🔴 | Lines | **20.0%** ($\\color{red}{\\textsf{-60.00\\%}}$ ▼) | 2/10 |
 
-### ✏️ Changed files (1 of 1)
+<details>
+<summary>✏️ Changed files (1 of 1)</summary>
 
 | St. | File | Statements | Branches | Functions | Lines | Uncovered |
 | :-: | --- | ---: | ---: | ---: | ---: | --- |
 | 🔴 | \`src/a.ts\` | 20.0% −60.0 | 20.0% −60.0 | 20.0% −60.0 | 20.0% −60.0 | — |
+
+</details>
 
 <details>
 <summary>🔻 Show files with reduced coverage (1)</summary>
@@ -234,11 +240,14 @@ _PR #42_
 | 🟢 | Functions | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
 | 🟢 | Lines | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) — required 90% | 9/10 |
 
-### ✏️ Changed files (1 of 1)
+<details>
+<summary>✏️ Changed files (1 of 1)</summary>
 
 | St. | File | Statements | Branches | Functions | Lines | Uncovered |
 | :-: | --- | ---: | ---: | ---: | ---: | --- |
 | 🟢 | \`src/a.ts\` | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 4 |
+
+</details>
 
 <details>
 <summary>📋 Full coverage table (1)</summary>
@@ -266,20 +275,40 @@ _PR #42_
   <img alt="coverage metrics: value, covered/total, delta and trend per metric" src="https://raw.test/l.svg">
 </picture>
 
+<details>
+<summary>📊 Coverage report — this PR vs base branch</summary>
+
+**Current PR**
+
+| St. | Category | Percentage | Covered / Total |
+| :-: | --- | --- | ---: |
+| 🟢 | Statements | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
+| 🟢 | Branches | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
+| 🟢 | Functions | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
+| 🟢 | Lines | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
+
+**Base branch**
+
 | St. | Category | Percentage |
 | :-: | --- | --- |
-| 🟢 | Statements | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) |
-| 🟢 | Branches | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) |
-| 🟢 | Functions | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) |
-| 🟢 | Lines | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) |
+| 🟢 | Statements | **80.0%** |
+| 🟢 | Branches | **80.0%** |
+| 🟢 | Functions | **80.0%** |
+| 🟢 | Lines | **80.0%** |
 
-### ✏️ Changed files (1 of 1)
+</details>
+
+<details>
+<summary>✏️ Changed files (1 of 1)</summary>
 
 | St. | File | Statements | Branches | Functions | Lines | Uncovered |
 | :-: | --- | ---: | ---: | ---: | ---: | --- |
 | 🟢 | \`src/a.ts\` | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 4 |
 
-### 📈 Coverage trend — lines % (last 3 baselines)
+</details>
+
+<details>
+<summary>📈 Coverage trend — lines % (last 3 baselines)</summary>
 
 \`\`\`mermaid
 xychart-beta
@@ -287,6 +316,8 @@ xychart-beta
   y-axis "lines %" 75 --> 100
   line [80.0, 85.0, 90.0]
 \`\`\`
+
+</details>
 
 <details>
 <summary>📋 Full coverage table (1)</summary>
