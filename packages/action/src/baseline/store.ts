@@ -64,6 +64,15 @@ export type BaselineOctokit = {
         force?: boolean;
       }): Promise<unknown>;
     };
+    pulls: {
+      listFiles(p: {
+        owner: string;
+        repo: string;
+        pull_number: number;
+        per_page: number;
+        page: number;
+      }): Promise<{ data: { filename: string }[] }>;
+    };
     repos: {
       getContent(p: { owner: string; repo: string; path: string; ref: string }): Promise<{
         data: unknown;

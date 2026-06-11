@@ -39,6 +39,8 @@ export const fileReportSchema = z.object({
   path: z.string(),
   /** 'new' | 'modified' | 'unchanged' relative to baseline */
   change: z.enum(['new', 'modified', 'unchanged']),
+  /** true when the file is part of the PR's git diff (set when known) */
+  touched: z.boolean().optional(),
   metrics: z.record(metricKeySchema, metricDeltaSchema),
   uncoveredRanges: z.array(z.object({ start: z.number().int(), end: z.number().int() })).optional(),
 });

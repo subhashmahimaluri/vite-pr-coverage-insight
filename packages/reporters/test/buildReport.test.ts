@@ -106,6 +106,22 @@ describe('buildReport output', () => {
     ]);
   });
 
+  it('marks files from the PR diff as touched', () => {
+    const report = build({
+      head: model([
+        { path: 'src/a.ts', covered: 9, total: 10 },
+        { path: 'src/other.ts', covered: 5, total: 5 },
+      ]),
+      touchedFiles: ['src/a.ts', 'docs/readme.md'],
+    });
+    expect(report.files!.find((f) => f.path === 'src/a.ts')!.touched).toBe(true);
+    expect(report.files!.find((f) => f.path === 'src/other.ts')!.touched).toBe(false);
+  });
+
+  it('leaves touched undefined when the diff is unknown', () => {
+    expect(build().files![0].touched).toBeUndefined();
+  });
+
   it('is deterministic for identical input', () => {
     expect(JSON.stringify(build())).toBe(JSON.stringify(build()));
   });

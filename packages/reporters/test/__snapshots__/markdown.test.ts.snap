@@ -54,18 +54,12 @@ _No baseline was found — absolute coverage only. Deltas will appear once the n
 | Functions | 90.00% |
 | Lines | 90.00% |
 
-### Changed files
-
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | new | 90.00% | 90.00% | 90.00% | 90.00% | 4 |
-
 <details>
 <summary>All files (1)</summary>
 
-| File | Change | Statements | Branches | Functions | Lines | Uncovered |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| \`src/a.ts\` | new | 90.00% | 90.00% | 90.00% | 90.00% | 4 |
+| File | Statements | Branches | Functions | Lines | Uncovered |
+| --- | ---: | ---: | ---: | ---: | --- |
+| \`src/a.ts\` | 90.00% | 90.00% | 90.00% | 90.00% | 4 |
 
 </details>"
 `;

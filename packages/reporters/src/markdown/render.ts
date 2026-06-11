@@ -120,29 +120,49 @@ function totalsTable(report: CoverageReport, withDeltas: boolean): string {
   return lines.join('\n');
 }
 
-function fileRow(file: FileReport, withDeltas: boolean): string {
+function fileRow(file: FileReport, withDeltas: boolean, withChange: boolean): string {
   const cells = METRIC_KEYS.map((key) => {
     const m = file.metrics[key];
     return withDeltas && m.delta !== null
       ? `${fmtPct(m.head)} (${fmtDelta(m.delta)})`
       : fmtPct(m.head);
   });
-  return `| \`${file.path}\` | ${file.change} | ${cells.join(' | ')} | ${fmtRanges(file.uncoveredRanges)} |`;
+  const change = withChange ? ` ${file.change} |` : '';
+  return `| \`${file.path}\` |${change} ${cells.join(' | ')} | ${fmtRanges(file.uncoveredRanges)} |`;
 }
 
-function fileTableHeader(): string[] {
-  return [
-    '| File | Change | Statements | Branches | Functions | Lines | Uncovered |',
-    '| --- | --- | ---: | ---: | ---: | ---: | --- |',
-  ];
+function fileTableHeader(withChange: boolean): string[] {
+  return withChange
+    ? [
+        '| File | Change | Statements | Branches | Functions | Lines | Uncovered |',
+        '| --- | --- | ---: | ---: | ---: | ---: | --- |',
+      ]
+    : [
+        '| File | Statements | Branches | Functions | Lines | Uncovered |',
+        '| --- | ---: | ---: | ---: | ---: | --- |',
+      ];
 }
 
+/**
+ * "Changed files" prefers the PR's actual git diff (FileReport.touched, set
+ * when the action could read the PR file list). Without that signal it falls
+ * back to baseline-relative change — but never when there is no baseline,
+ * where every file would be 'new' and the table would just dump the repo.
+ * The Change column is only meaningful relative to a baseline.
+ */
 function changedFilesSection(files: FileReport[], withDeltas: boolean, rowLimit?: number): string {
-  const changed = files.filter((f) => f.change !== 'unchanged');
+  const hasTouchInfo = files.some((f) => f.touched !== undefined);
+  const changed = hasTouchInfo
+    ? files.filter((f) => f.touched)
+    : withDeltas
+      ? files.filter((f) => f.change !== 'unchanged')
+      : [];
   if (changed.length === 0) return '';
+  const withChange = withDeltas;
+  const title = hasTouchInfo ? '### Files changed in this PR' : '### Changed files';
   const shown = rowLimit !== undefined ? changed.slice(0, rowLimit) : changed;
-  const lines = ['### Changed files', '', ...fileTableHeader()];
-  for (const file of shown) lines.push(fileRow(file, withDeltas));
+  const lines = [title, '', ...fileTableHeader(withChange)];
+  for (const file of shown) lines.push(fileRow(file, withDeltas, withChange));
   if (shown.length < changed.length) {
     lines.push('', `_…${changed.length - shown.length} more changed files omitted._`);
   }
@@ -151,13 +171,14 @@ function changedFilesSection(files: FileReport[], withDeltas: boolean, rowLimit?
 
 function fullFilesSection(files: FileReport[], withDeltas: boolean): string {
   if (files.length === 0) return '';
+  const withChange = withDeltas;
   const lines = [
     '<details>',
     `<summary>All files (${files.length})</summary>`,
     '',
-    ...fileTableHeader(),
+    ...fileTableHeader(withChange),
   ];
-  for (const file of files) lines.push(fileRow(file, withDeltas));
+  for (const file of files) lines.push(fileRow(file, withDeltas, withChange));
   lines.push('', '</details>');
   return lines.join('\n');
 }
@@ -337,8 +358,8 @@ function projectDetails(project: ProjectReport): string {
   ];
   const changed = changedFilesSection(project.files, true);
   if (changed) lines.push(changed, '');
-  lines.push(...fileTableHeader());
-  for (const file of project.files) lines.push(fileRow(file, true));
+  lines.push(...fileTableHeader(true));
+  for (const file of project.files) lines.push(fileRow(file, true, true));
   lines.push('', '</details>');
   return lines.join('\n');
 }

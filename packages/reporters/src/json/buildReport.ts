@@ -50,6 +50,8 @@ export type BuildReportInput = {
   errors?: InputError[];
   /** history series for sparklines, newest last */
   history?: HistoryPoint[];
+  /** repo-relative paths changed in the PR's git diff — marks FileReport.touched */
+  touchedFiles?: string[];
 };
 
 /** Rounds to 2 decimals (D7: same input ⇒ same output, no float drift). */
@@ -104,9 +106,14 @@ function classifyChange(
   return modified ? 'modified' : 'unchanged';
 }
 
-function buildFiles(head: CoverageModel, base: CoverageModel | null): FileReport[] {
+function buildFiles(
+  head: CoverageModel,
+  base: CoverageModel | null,
+  touchedFiles?: string[]
+): FileReport[] {
   const baseByPath = new Map<string, FileCoverage>();
   for (const file of base?.files ?? []) baseByPath.set(file.path, file);
+  const touched = touchedFiles ? new Set(touchedFiles) : null;
 
   return head.files.map((file) => {
     const baseFile = baseByPath.get(file.path);
@@ -123,6 +130,7 @@ function buildFiles(head: CoverageModel, base: CoverageModel | null): FileReport
     return {
       path: file.path,
       change: classifyChange(file, baseFile, base !== null),
+      ...(touched ? { touched: touched.has(file.path) } : {}),
       metrics,
       ...(uncoveredRanges ? { uncoveredRanges } : {}),
     };
@@ -184,7 +192,7 @@ function classifyState(
 export function buildReport(input: BuildReportInput): CoverageReport {
   const base = input.base ?? null;
   const totals = buildTotals(input.head, base);
-  const files = buildFiles(input.head, base);
+  const files = buildFiles(input.head, base, input.touchedFiles);
   const state = classifyState(input, base, totals, files);
 
   const report: CoverageReport = {

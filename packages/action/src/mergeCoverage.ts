@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { CoverageMetric, CoverageSummary } from '@coverage-insight/core';
+import { relativizePath, type CoverageMetric, type CoverageSummary } from '@coverage-insight/core';
 
 const METRICS = ['statements', 'branches', 'functions', 'lines'] as const;
 
@@ -49,6 +49,20 @@ export function mergeSummaries(shards: CoverageSummary[]): CoverageSummary {
   }
 
   return { total, ...Object.fromEntries(files) } as CoverageSummary;
+}
+
+/**
+ * Rewrites the absolute runner paths istanbul emits into repo-relative keys so
+ * reports stay readable and baselines compare across runners.
+ */
+export function relativizeSummary(summary: CoverageSummary, root: string): CoverageSummary {
+  if (!root) return summary;
+  const out = { total: summary.total } as CoverageSummary;
+  for (const [filePath, metrics] of Object.entries(summary)) {
+    if (filePath === 'total') continue;
+    out[relativizePath(filePath, root)] = metrics;
+  }
+  return out;
 }
 
 /**
