@@ -54,6 +54,31 @@ const REPORT_JSON = 'coverage-report.json';
 const REPORT_HTML = 'coverage-report.html';
 const AI_AUDIT = 'ai-audit.json';
 
+/** concise one-liner for logs — never the raw error object: an uncaught dump
+ *  of the minified bundle prints the whole offending line into the action log */
+function briefError(error: unknown): string {
+  if (error instanceof Error) {
+    const frames = (error.stack ?? '')
+      .split('\n')
+      .slice(1, 4)
+      .map((l) => l.trim())
+      .join(' ← ');
+    return frames ? `${error.message} (${frames})` : error.message;
+  }
+  return String(error);
+}
+
+// @actions/cache (and other SDK internals) can reject on floating promises;
+// without these handlers Node crashes the job and dumps the minified source
+// line into the log. Crashes never decide the workflow — the policy verdict
+// does — so log concisely and move on.
+process.on('unhandledRejection', (reason) => {
+  console.warn(`⚠️ Ignored unhandled async error: ${briefError(reason)}`);
+});
+process.on('uncaughtException', (error) => {
+  console.warn(`⚠️ Ignored uncaught exception: ${briefError(error)}`);
+});
+
 /**
  * Entry point. Modes:
  *  - baseline (Stage 2.1): publish HEAD coverage to the baseline store
@@ -70,7 +95,7 @@ async function run() {
       await runReportMode();
     }
   } catch (error) {
-    console.error('❌ An error occurred during action execution:', error);
+    console.error(`❌ An error occurred during action execution: ${briefError(error)}`);
     // workflow-level failure is driven by the policy verdict, not crashes
   }
 }
@@ -534,8 +559,27 @@ function emptyTotals(): CoverageModel['total'] {
   return { statements: zero, branches: zero, functions: zero, lines: zero };
 }
 
-/** actions/cache wrappers — tolerate failure outside the Actions runtime (forks, local runs) */
+/**
+ * actions/cache wrappers — tolerate failure outside the Actions runtime
+ * (forks, local runs, GHES without the cache service). isFeatureAvailable()
+ * is checked first so the cache client is never constructed when the service
+ * is missing — that path otherwise burns ~30s in 5 retry attempts and has
+ * crashed jobs via unhandled rejections in the twirp client. The cache is
+ * only an accelerator: the coverage-baseline branch remains the source of
+ * truth, so skipping is always safe.
+ */
+function cacheAvailable(verb: string): boolean {
+  try {
+    if (cache.isFeatureAvailable()) return true;
+  } catch {
+    // fall through — treat probe failure as unavailable
+  }
+  console.warn(`⚠️ Actions cache service unavailable — baseline cache ${verb} skipped`);
+  return false;
+}
+
 async function saveBaselineToCache(summary: CoverageSummary, sha: string): Promise<void> {
+  if (!cacheAvailable('save')) return;
   try {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
     const file = path.join(CACHE_DIR, 'baseline.json');
@@ -546,11 +590,12 @@ async function saveBaselineToCache(summary: CoverageSummary, sha: string): Promi
     await cache.saveCache([CACHE_DIR], cacheKey(sha));
     console.log(`✅ Baseline cached as ${cacheKey(sha)}`);
   } catch (error) {
-    console.warn(`⚠️ Baseline cache save skipped: ${error}`);
+    console.warn(`⚠️ Baseline cache save skipped: ${briefError(error)}`);
   }
 }
 
 async function restoreBaselineFromCache(sha: string): Promise<string | null> {
+  if (!cacheAvailable('restore')) return null;
   try {
     const hit = await cache.restoreCache([CACHE_DIR], cacheKey(sha));
     if (!hit) return null;
@@ -558,7 +603,7 @@ async function restoreBaselineFromCache(sha: string): Promise<string | null> {
     if (!fs.existsSync(file)) return null;
     return fs.readFileSync(file, 'utf-8');
   } catch (error) {
-    console.warn(`⚠️ Baseline cache restore skipped: ${error}`);
+    console.warn(`⚠️ Baseline cache restore skipped: ${briefError(error)}`);
     return null;
   }
 }

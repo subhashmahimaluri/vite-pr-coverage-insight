@@ -29,7 +29,8 @@ export async function upsertCoverageComment({
   });
 
   const existing = comments.find(
-    (c) => c.body?.includes(COMMENT_MARKER) || c.body?.includes(LEGACY_TAG)
+    (c: { id: number; body?: string }) =>
+      c.body?.includes(COMMENT_MARKER) || c.body?.includes(LEGACY_TAG)
   );
 
   if (existing) {
