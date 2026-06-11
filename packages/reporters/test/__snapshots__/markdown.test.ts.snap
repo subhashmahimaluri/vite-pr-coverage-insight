@@ -182,11 +182,7 @@ exports[`renderMarkdown states > tests-failed: failures first, coverage marked p
 
 _PR #42_
 
-| Failed | Passed | Total |
-| ---: | ---: | ---: |
-| **1** | 4 | 5 |
-
-### Failed suites
+### Failed suites — _1 failed · 4 passed · 5 total_
 
 <details open>
 <summary><code>src/a.test.ts</code> — 1 failed test</summary>
@@ -195,26 +191,12 @@ _PR #42_
 
 </details>
 
-> [!WARNING]
-> Coverage shown below is partial — computed from the failed run. Gate evaluation deferred until tests pass.
-
-<details>
-<summary>Partial coverage summary (informational only)</summary>
-
 | St. | Category | Percentage | Covered / Total |
 | :-: | --- | --- | ---: |
-| 🟢 | Statements | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
-| 🟢 | Branches | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
-| 🟢 | Functions | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
-| 🟢 | Lines | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
-
-### ✏️ Changed files (1 of 1)
-
-| St. | File | Statements | Branches | Functions | Lines | Uncovered |
-| :-: | --- | ---: | ---: | ---: | ---: | --- |
-| 🟢 | \`src/a.ts\` | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 90.0% +10.0 | 4 |
-
-</details>
+| 🟢 | Statements | **90.0%** | 9/10 |
+| 🟢 | Branches | **90.0%** | 9/10 |
+| 🟢 | Functions | **90.0%** | 9/10 |
+| 🟢 | Lines | **90.0%** | 9/10 |
 
 ---
 

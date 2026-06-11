@@ -436,15 +436,13 @@ function failedTestsSection(report: CoverageReport): string {
   const failures = report.testFailures;
   if (!failures || failures.numFailedTests === 0) return '';
 
-  const passed = Math.max(0, failures.numTotalTests - failures.numFailedTests);
-  const lines = [
-    '| Failed | Passed | Total |',
-    '| ---: | ---: | ---: |',
-    `| **${failures.numFailedTests}** | ${passed} | ${failures.numTotalTests} |`,
-    '',
-    '### Failed suites',
-    '',
-  ];
+  const total = failures.numTotalTests;
+  const passed = Math.max(0, total - failures.numFailedTests);
+  const summary =
+    total > 0
+      ? `${failures.numFailedTests} failed · ${passed} passed · ${total} total`
+      : plural(failures.numFailedTests, 'test') + ' failed';
+  const lines = [`### Failed suites — _${summary}_`, ''];
 
   const bySuite = new Map<string, typeof failures.failedTests>();
   for (const failure of failures.failedTests) {
@@ -698,8 +696,10 @@ function sectionsFor(
 
     case 'tests-failed':
       push(failedTestsSection(report), { protected: true });
-      push(PARTIAL_BANNER, { protected: true });
-      push(partialCoverageSection(report, withDeltas), { fullTable: true });
+      push(totalsSection(report, false), { protected: true });
+      push(changedFilesSection(report, false), {
+        changedFiles: { files, withDeltas: false },
+      });
       break;
 
     case 'no-baseline':

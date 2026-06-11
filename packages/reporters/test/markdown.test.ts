@@ -46,7 +46,8 @@ describe('renderMarkdown states', () => {
       })
     );
     expect(md).toContain('🛑 Tests failed');
-    expect(md.indexOf('boom')).toBeLessThan(md.indexOf('partial'));
+    expect(md).toContain('boom');
+    expect(md).not.toContain('partial');
     expect(md).toMatchSnapshot();
   });
 
