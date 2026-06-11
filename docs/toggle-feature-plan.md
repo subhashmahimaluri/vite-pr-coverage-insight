@@ -3,6 +3,7 @@
 ## Current Understanding
 
 The project is a GitHub Action that:
+
 1. Reads coverage data from base and PR branches in Istanbul format
 2. Compares overall coverage metrics (statements, branches, functions, lines)
 3. Generates a markdown report and posts it as a PR comment
@@ -65,16 +66,16 @@ export function compareFileCoverage(base: CoverageSummary, pr: CoverageSummary) 
 
   // Get all unique file paths from both base and PR
   const allFiles = new Set<string>();
-  Object.keys(base).forEach(key => {
+  Object.keys(base).forEach((key) => {
     if (key !== 'total') allFiles.add(key);
   });
-  Object.keys(pr).forEach(key => {
+  Object.keys(pr).forEach((key) => {
     if (key !== 'total') allFiles.add(key);
   });
 
   // Compare each file's coverage
-  allFiles.forEach(file => {
-    const fileMetrics = metrics.map(metric => {
+  allFiles.forEach((file) => {
+    const fileMetrics = metrics.map((metric) => {
       const basePct = base[file]?.[metric]?.pct ?? 0;
       const prPct = pr[file]?.[metric]?.pct ?? 0;
       const delta = parseFloat((prPct - basePct).toFixed(2));
@@ -89,7 +90,7 @@ export function compareFileCoverage(base: CoverageSummary, pr: CoverageSummary) 
     });
 
     // Only include files with changes
-    if (fileMetrics.some(m => m.delta !== 0)) {
+    if (fileMetrics.some((m) => m.delta !== 0)) {
       fileChanges.push({
         file,
         metrics: fileMetrics,
@@ -119,7 +120,7 @@ async function run() {
 
     // ... existing code ...
   } catch (error) {
-    console.error("❌ Error generating coverage comment:", error);
+    console.error('❌ Error generating coverage comment:', error);
   }
 }
 ```
@@ -150,7 +151,7 @@ export function formatCoverageMarkdown(
 ) {
   // Format the summary table (existing code)
   const header = `### 📊 Vite Coverage Report\n\n| Metric     | Base     | PR       | ∆        |\n|------------|----------|----------|----------|`;
-  
+
   const lines = rows.map(
     ({ metric, base, pr, delta, symbol }) =>
       `| ${metric} | ${base.toFixed(2)}% | ${pr.toFixed(2)}% | ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}% ${symbol} |`
@@ -158,17 +159,18 @@ export function formatCoverageMarkdown(
 
   // Format the file details section (new code)
   let fileDetailsSection = '';
-  
+
   if (fileChanges.length > 0) {
-    fileDetailsSection = '\n\n<details>\n<summary>📁 Show file-level coverage changes</summary>\n\n';
-    
+    fileDetailsSection =
+      '\n\n<details>\n<summary>📁 Show file-level coverage changes</summary>\n\n';
+
     // Group files by whether they improved or worsened
-    const improved = fileChanges.filter(f => f.metrics.some(m => m.delta > 0));
-    const worsened = fileChanges.filter(f => f.metrics.some(m => m.delta < 0));
-    
+    const improved = fileChanges.filter((f) => f.metrics.some((m) => m.delta > 0));
+    const worsened = fileChanges.filter((f) => f.metrics.some((m) => m.delta < 0));
+
     if (improved.length > 0) {
       fileDetailsSection += '#### ✅ Improved Coverage\n\n';
-      improved.forEach(file => {
+      improved.forEach((file) => {
         fileDetailsSection += `**${file.file}**\n\n`;
         fileDetailsSection += '| Metric | Base | PR | ∆ |\n|--------|------|----|----|';
         file.metrics.forEach(({ metric, base, pr, delta, symbol }) => {
@@ -177,10 +179,10 @@ export function formatCoverageMarkdown(
         fileDetailsSection += '\n\n';
       });
     }
-    
+
     if (worsened.length > 0) {
       fileDetailsSection += '#### ⚠️ Decreased Coverage\n\n';
-      worsened.forEach(file => {
+      worsened.forEach((file) => {
         fileDetailsSection += `**${file.file}**\n\n`;
         fileDetailsSection += '| Metric | Base | PR | ∆ |\n|--------|------|----|----|';
         file.metrics.forEach(({ metric, base, pr, delta, symbol }) => {
@@ -189,7 +191,7 @@ export function formatCoverageMarkdown(
         fileDetailsSection += '\n\n';
       });
     }
-    
+
     fileDetailsSection += '</details>';
   }
 

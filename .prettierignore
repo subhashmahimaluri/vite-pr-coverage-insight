@@ -1,0 +1,10 @@
+dist/
+packages/*/dist/
+node_modules/
+coverage/
+package-lock.json
+__snapshots__/
+CHANGELOG.md
+
+# intentionally malformed fixture
+fixtures/corrupt/base.json

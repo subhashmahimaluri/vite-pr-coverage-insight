@@ -1,0 +1,308 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateCoverageReport > matches snapshot for deleted-file 1`] = `
+"### 📊 Vite Coverage Report
+
+| Metric     | Base     | PR       | ∆        |
+|------------|----------|----------|----------|
+| statements | 80.00% | 85.45% | +5.45% ⬆️ |
+| branches | 75.00% | 80.00% | +5.00% ⬆️ |
+| functions | 80.00% | 85.00% | +5.00% ⬆️ |
+| lines | 80.00% | 85.00% | +5.00% ⬆️ |
+
+---
+
+<details><summary>🗂️ Open File Coverage Breakdown</summary>
+
+---
+
+#### ✏️ Modified Files:
+| File               | Branches | Funcs | Lines | Uncovered Lines |
+|---------------------|----------|-------|-------|-----------------|
+| [math.ts](https://github.com/acme/demo/pull/42/files)    | 80%     | 85%    | 85%    | - |
+
+</details>
+
+---"
+`;
+
+exports[`generateCoverageReport > matches snapshot for deleted-file with test failures 1`] = `
+"### 📊 Vite Coverage Report
+
+| Metric     | Base     | PR       | ∆        |
+|------------|----------|----------|----------|
+| statements | 80.00% | 85.45% | +5.45% ⬆️ |
+| branches | 75.00% | 80.00% | +5.00% ⬆️ |
+| functions | 80.00% | 85.00% | +5.00% ⬆️ |
+| lines | 80.00% | 85.00% | +5.00% ⬆️ |
+
+---
+
+<details><summary>🗂️ Open File Coverage Breakdown</summary>
+
+---
+
+#### ✏️ Modified Files:
+| File               | Branches | Funcs | Lines | Uncovered Lines |
+|---------------------|----------|-------|-------|-----------------|
+| [math.ts](https://github.com/acme/demo/pull/42/files)    | 80%     | 85%    | 85%    | - |
+
+</details>
+
+---
+
+---
+
+<details><summary>❌ Failed Tests (2/48)</summary>
+
+| Test File | Failed Test Case |
+|-----------|------------------|
+| math.test.ts | should round half-up at the boundary |
+| string.test.ts | should trim unicode whitespace |
+
+</details>
+
+---"
+`;
+
+exports[`generateCoverageReport > matches snapshot for identical 1`] = `
+"### 📊 Vite Coverage Report
+
+| Metric     | Base     | PR       | ∆        |
+|------------|----------|----------|----------|
+| statements | 90.00% | 90.00% | +0.00% ➖ |
+| branches | 85.00% | 85.00% | +0.00% ➖ |
+| functions | 90.00% | 90.00% | +0.00% ➖ |
+| lines | 90.00% | 90.00% | +0.00% ➖ |"
+`;
+
+exports[`generateCoverageReport > matches snapshot for identical with test failures 1`] = `
+"### 📊 Vite Coverage Report
+
+| Metric     | Base     | PR       | ∆        |
+|------------|----------|----------|----------|
+| statements | 90.00% | 90.00% | +0.00% ➖ |
+| branches | 85.00% | 85.00% | +0.00% ➖ |
+| functions | 90.00% | 90.00% | +0.00% ➖ |
+| lines | 90.00% | 90.00% | +0.00% ➖ |
+
+---
+
+<details><summary>❌ Failed Tests (2/48)</summary>
+
+| Test File | Failed Test Case |
+|-----------|------------------|
+| math.test.ts | should round half-up at the boundary |
+| string.test.ts | should trim unicode whitespace |
+
+</details>
+
+---"
+`;
+
+exports[`generateCoverageReport > matches snapshot for improvement 1`] = `
+"### 📊 Vite Coverage Report
+
+| Metric     | Base     | PR       | ∆        |
+|------------|----------|----------|----------|
+| statements | 75.00% | 90.00% | +15.00% ⬆️ |
+| branches | 65.00% | 85.00% | +20.00% ⬆️ |
+| functions | 70.00% | 90.00% | +20.00% ⬆️ |
+| lines | 75.00% | 90.00% | +15.00% ⬆️ |
+
+---
+
+<details><summary>🗂️ Open File Coverage Breakdown</summary>
+
+---
+
+#### ✏️ Modified Files:
+| File               | Branches | Funcs | Lines | Uncovered Lines |
+|---------------------|----------|-------|-------|-----------------|
+| [math.ts](https://github.com/acme/demo/pull/42/files)    | 85%     | 90%    | 90%    | [12-14, 42](https://github.com/acme/demo/pull/42/files) |
+| [string.ts](https://github.com/acme/demo/pull/42/files)    | 85%     | 90%    | 90%    | - |
+
+</details>
+
+---"
+`;
+
+exports[`generateCoverageReport > matches snapshot for improvement with test failures 1`] = `
+"### 📊 Vite Coverage Report
+
+| Metric     | Base     | PR       | ∆        |
+|------------|----------|----------|----------|
+| statements | 75.00% | 90.00% | +15.00% ⬆️ |
+| branches | 65.00% | 85.00% | +20.00% ⬆️ |
+| functions | 70.00% | 90.00% | +20.00% ⬆️ |
+| lines | 75.00% | 90.00% | +15.00% ⬆️ |
+
+---
+
+<details><summary>🗂️ Open File Coverage Breakdown</summary>
+
+---
+
+#### ✏️ Modified Files:
+| File               | Branches | Funcs | Lines | Uncovered Lines |
+|---------------------|----------|-------|-------|-----------------|
+| [math.ts](https://github.com/acme/demo/pull/42/files)    | 85%     | 90%    | 90%    | [12-14, 42](https://github.com/acme/demo/pull/42/files) |
+| [string.ts](https://github.com/acme/demo/pull/42/files)    | 85%     | 90%    | 90%    | - |
+
+</details>
+
+---
+
+---
+
+<details><summary>❌ Failed Tests (2/48)</summary>
+
+| Test File | Failed Test Case |
+|-----------|------------------|
+| math.test.ts | should round half-up at the boundary |
+| string.test.ts | should trim unicode whitespace |
+
+</details>
+
+---"
+`;
+
+exports[`generateCoverageReport > matches snapshot for new-file 1`] = `
+"### 📊 Vite Coverage Report
+
+| Metric     | Base     | PR       | ∆        |
+|------------|----------|----------|----------|
+| statements | 80.00% | 86.67% | +6.67% ⬆️ |
+| branches | 75.00% | 83.33% | +8.33% ⬆️ |
+| functions | 80.00% | 86.67% | +6.67% ⬆️ |
+| lines | 80.00% | 86.67% | +6.67% ⬆️ |
+
+---
+
+<details><summary>🗂️ Open File Coverage Breakdown</summary>
+
+---
+
+#### 🆕 Newly Added Files:
+| File              | Branches | Funcs | Lines | Uncovered Lines |
+|--------------------|----------|-------|-------|-----------------|
+| [date.ts](https://github.com/acme/demo/pull/42/files)   | 100%     | 100%  | 100%  | - |
+
+---
+
+
+
+</details>
+
+---"
+`;
+
+exports[`generateCoverageReport > matches snapshot for new-file with test failures 1`] = `
+"### 📊 Vite Coverage Report
+
+| Metric     | Base     | PR       | ∆        |
+|------------|----------|----------|----------|
+| statements | 80.00% | 86.67% | +6.67% ⬆️ |
+| branches | 75.00% | 83.33% | +8.33% ⬆️ |
+| functions | 80.00% | 86.67% | +6.67% ⬆️ |
+| lines | 80.00% | 86.67% | +6.67% ⬆️ |
+
+---
+
+<details><summary>🗂️ Open File Coverage Breakdown</summary>
+
+---
+
+#### 🆕 Newly Added Files:
+| File              | Branches | Funcs | Lines | Uncovered Lines |
+|--------------------|----------|-------|-------|-----------------|
+| [date.ts](https://github.com/acme/demo/pull/42/files)   | 100%     | 100%  | 100%  | - |
+
+---
+
+
+
+</details>
+
+---
+
+---
+
+<details><summary>❌ Failed Tests (2/48)</summary>
+
+| Test File | Failed Test Case |
+|-----------|------------------|
+| math.test.ts | should round half-up at the boundary |
+| string.test.ts | should trim unicode whitespace |
+
+</details>
+
+---"
+`;
+
+exports[`generateCoverageReport > matches snapshot for regression 1`] = `
+"### 📊 Vite Coverage Report
+
+| Metric     | Base     | PR       | ∆        |
+|------------|----------|----------|----------|
+| statements | 90.00% | 76.09% | -13.91% ⬇️ |
+| branches | 85.00% | 65.48% | -19.52% ⬇️ |
+| functions | 90.00% | 71.43% | -18.57% ⬇️ |
+| lines | 90.00% | 76.19% | -13.81% ⬇️ |
+
+---
+
+<details><summary>🗂️ Open File Coverage Breakdown</summary>
+
+---
+
+#### ✏️ Modified Files:
+| File               | Branches | Funcs | Lines | Uncovered Lines |
+|---------------------|----------|-------|-------|-----------------|
+| [math.ts](https://github.com/acme/demo/pull/42/files)    | 64%     | 68%    | 73%    | [5-6, 20-22, 57](https://github.com/acme/demo/pull/42/files) |
+| [string.ts](https://github.com/acme/demo/pull/42/files)    | 68%     | 75%    | 80%    | - |
+
+</details>
+
+---"
+`;
+
+exports[`generateCoverageReport > matches snapshot for regression with test failures 1`] = `
+"### 📊 Vite Coverage Report
+
+| Metric     | Base     | PR       | ∆        |
+|------------|----------|----------|----------|
+| statements | 90.00% | 76.09% | -13.91% ⬇️ |
+| branches | 85.00% | 65.48% | -19.52% ⬇️ |
+| functions | 90.00% | 71.43% | -18.57% ⬇️ |
+| lines | 90.00% | 76.19% | -13.81% ⬇️ |
+
+---
+
+<details><summary>🗂️ Open File Coverage Breakdown</summary>
+
+---
+
+#### ✏️ Modified Files:
+| File               | Branches | Funcs | Lines | Uncovered Lines |
+|---------------------|----------|-------|-------|-----------------|
+| [math.ts](https://github.com/acme/demo/pull/42/files)    | 64%     | 68%    | 73%    | [5-6, 20-22, 57](https://github.com/acme/demo/pull/42/files) |
+| [string.ts](https://github.com/acme/demo/pull/42/files)    | 68%     | 75%    | 80%    | - |
+
+</details>
+
+---
+
+---
+
+<details><summary>❌ Failed Tests (2/48)</summary>
+
+| Test File | Failed Test Case |
+|-----------|------------------|
+| math.test.ts | should round half-up at the boundary |
+| string.test.ts | should trim unicode whitespace |
+
+</details>
+
+---"
+`;

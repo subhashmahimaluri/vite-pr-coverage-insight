@@ -3,6 +3,7 @@
 ## Overview
 
 This document outlines the plan for extending the Vite PR Coverage Insight GitHub Action to:
+
 1. Continue generating and posting the coverage report even when tests fail
 2. Read a JSON file containing failed test information
 3. Include a simplified list of failed tests in a collapsible section of the coverage report
@@ -127,36 +128,36 @@ export function formatCoverageMarkdown(
   }
 ) {
   // Existing code for formatting coverage report...
-  
+
   // Add test failures section if available
   let testFailuresSection = '';
   if (testFailures && testFailures.numFailedTests > 0) {
     testFailuresSection = `\n\n---\n\n<details><summary>❌ Failed Tests (${testFailures.numFailedTests}/${testFailures.numTotalTests})</summary>\n\n`;
-    
+
     // Group failures by file
     const failuresByFile: Record<string, string[]> = {};
-    testFailures.failedTests.forEach(failure => {
+    testFailures.failedTests.forEach((failure) => {
       if (!failuresByFile[failure.filePath]) {
         failuresByFile[failure.filePath] = [];
       }
       failuresByFile[failure.filePath].push(failure.testName);
     });
-    
+
     // Format each file's failures
     Object.entries(failuresByFile).forEach(([filePath, testNames]) => {
       const fileName = filePath.split('/').pop() || filePath;
       testFailuresSection += `\n### 📄 ${fileName}\n\n`;
-      
-      testNames.forEach(testName => {
+
+      testNames.forEach((testName) => {
         testFailuresSection += `- ${testName}\n`;
       });
-      
+
       testFailuresSection += '\n';
     });
-    
+
     testFailuresSection += '</details>\n\n---';
   }
-  
+
   return `${mainTable}${fileDetailsSection}${testFailuresSection}`;
 }
 ```
@@ -173,7 +174,7 @@ export async function postCoverageReport({
   prNumber,
   markdown,
   testFailures,
-  useCheckRun = false
+  useCheckRun = false,
 }: {
   token: string;
   owner: string;
@@ -184,25 +185,25 @@ export async function postCoverageReport({
   useCheckRun?: boolean;
 }): Promise<void> {
   // Existing code...
-  
+
   // Optionally post as a check run
   if (useCheckRun) {
     // Determine conclusion based on coverage and test failures
-    let conclusion: "success" | "failure" | "neutral" = "success";
-    
+    let conclusion: 'success' | 'failure' | 'neutral' = 'success';
+
     // If coverage decreased, set to neutral
-    if (markdown.includes("⬇️")) {
-      conclusion = "neutral";
+    if (markdown.includes('⬇️')) {
+      conclusion = 'neutral';
     }
-    
+
     // If tests failed, set to failure
     if (testFailures && testFailures.numFailedTests > 0) {
-      conclusion = "failure";
+      conclusion = 'failure';
     }
-    
+
     await postCoverageCheckRun({
       token,
-      title: "Coverage Report",
+      title: 'Coverage Report',
       summary: markdown,
       conclusion,
     });
@@ -217,15 +218,15 @@ Update the main function in `index.ts` to handle the new test failures parameter
 ```typescript
 async function run() {
   try {
-    const githubToken = getInput("github-token", { required: true });
-    const basePath = getInput("base", { required: true });
-    const headPath = getInput("head", { required: true });
-    const testFailuresPath = getInput("test-failures");
-    const useCheckRun = getInput("use-check-run") === "true";
+    const githubToken = getInput('github-token', { required: true });
+    const basePath = getInput('base', { required: true });
+    const headPath = getInput('head', { required: true });
+    const testFailuresPath = getInput('test-failures');
+    const useCheckRun = getInput('use-check-run') === 'true';
 
     // Read coverage data from files
-    const baseJson = fs.readFileSync(path.resolve(basePath), "utf-8");
-    const headJson = fs.readFileSync(path.resolve(headPath), "utf-8");
+    const baseJson = fs.readFileSync(path.resolve(basePath), 'utf-8');
+    const headJson = fs.readFileSync(path.resolve(headPath), 'utf-8');
 
     const base: CoverageSummary = JSON.parse(baseJson);
     const pr: CoverageSummary = JSON.parse(headJson);
@@ -240,7 +241,7 @@ async function run() {
     const { owner, repo } = context.repo;
     const prNumber = context.payload.pull_request?.number;
 
-    if (!prNumber) throw new Error("Pull request number not found");
+    if (!prNumber) throw new Error('Pull request number not found');
 
     // Generate the markdown report with PR information and test failures
     const markdown = generateCoverageReport(base, pr, testFailures, { owner, repo, prNumber });
@@ -253,18 +254,18 @@ async function run() {
       prNumber,
       markdown,
       testFailures,
-      useCheckRun
+      useCheckRun,
     });
-    
-    console.log("✅ Coverage report successfully posted to PR");
-    
+
+    console.log('✅ Coverage report successfully posted to PR');
+
     // Exit with error code if tests failed
     if (testFailures && testFailures.numFailedTests > 0) {
       console.error(`❌ ${testFailures.numFailedTests} tests failed`);
       process.exit(1); // Fail the pipeline
     }
   } catch (error) {
-    console.error("❌ Error generating coverage comment:", error);
+    console.error('❌ Error generating coverage comment:', error);
     process.exit(1);
   }
 }
@@ -274,7 +275,7 @@ async function run() {
 
 Update the README.md file to document the new feature and how to use it:
 
-```markdown
+````markdown
 ## Failed Test Reporting
 
 This action now supports reporting failed tests alongside coverage information. To use this feature:
@@ -283,6 +284,7 @@ This action now supports reporting failed tests alongside coverage information. 
 2. Add the `test-failures` input parameter to the action configuration
 
 The action will:
+
 - Generate and post the coverage report even when tests fail
 - Include a list of failed tests in the report
 - Still exit with an error code to fail the pipeline
@@ -302,6 +304,7 @@ Example workflow:
     head: pr-coverage/coverage-summary.json
     test-failures: test-failures.json
 ```
+````
 
 ## Implementation Timeline
 
