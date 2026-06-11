@@ -72,10 +72,10 @@ v1's biggest cost: PR workflows run the full test suite **twice** (base + head).
 
 Three pipeline agents, each a small, auditable unit with a strict JSON contract:
 
-| Agent | Input | Output | Guardrails |
-|---|---|---|---|
-| coverage-analyst | diff result + changed-file source snippets | ranked risk findings, plain-English summary | token budget, no code execution |
-| test-suggester | uncovered lines/branches + surrounding source | test skeletons (framework-aware: Vitest/Jest) | suggestions only; never commits |
+| Agent            | Input                                          | Output                                           | Guardrails                                     |
+| ---------------- | ---------------------------------------------- | ------------------------------------------------ | ---------------------------------------------- |
+| coverage-analyst | diff result + changed-file source snippets     | ranked risk findings, plain-English summary      | token budget, no code execution                |
+| test-suggester   | uncovered lines/branches + surrounding source  | test skeletons (framework-aware: Vitest/Jest)    | suggestions only; never commits                |
 | pr-risk-reviewer | analyst output + test failures + policy result | verdict: approve-signal / warn / block-recommend | advisory by default; blocking is opt-in policy |
 
 Enterprise controls: model allowlist, max-spend per run, PII/source-redaction option (send only file paths + metrics, not code), full prompt/response audit log emitted as a CI artifact.
@@ -106,12 +106,12 @@ Same core, three surfaces: CI agent (automated), CLI (manual), skill (conversati
 
 ## 9. Decisions log
 
-| Decision | Choice | Why |
-|---|---|---|
-| Repo shape | **npm workspaces** monorepo, keep this repo | enterprise-safe (no pnpm requirement); preserve history; packages publishable separately |
-| Base coverage | never computed in PR workflows | baseline store on main-branch pushes; PR CI time ~halved (see Performance section) |
-| AI packaging | separate `packages/agents`, dynamic import, default `off` | air-gapped enterprises omit it entirely; AI off ⇒ byte-identical deterministic report |
-| Default history store | git branch (`coverage-history`) | zero infrastructure; S3 optional for scale |
-| AI provider | Anthropic-first behind provider interface | quality + enterprise Bedrock/Vertex paths |
-| HTML report | single static file, no server | air-gap + artifact-friendly; hosted dashboard deferred to Phase 4+ |
-| v1 compatibility | keep existing action inputs working | existing users upgrade with zero workflow changes |
+| Decision              | Choice                                                    | Why                                                                                      |
+| --------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Repo shape            | **npm workspaces** monorepo, keep this repo               | enterprise-safe (no pnpm requirement); preserve history; packages publishable separately |
+| Base coverage         | never computed in PR workflows                            | baseline store on main-branch pushes; PR CI time ~halved (see Performance section)       |
+| AI packaging          | separate `packages/agents`, dynamic import, default `off` | air-gapped enterprises omit it entirely; AI off ⇒ byte-identical deterministic report    |
+| Default history store | git branch (`coverage-history`)                           | zero infrastructure; S3 optional for scale                                               |
+| AI provider           | Anthropic-first behind provider interface                 | quality + enterprise Bedrock/Vertex paths                                                |
+| HTML report           | single static file, no server                             | air-gap + artifact-friendly; hosted dashboard deferred to Phase 4+                       |
+| v1 compatibility      | keep existing action inputs working                       | existing users upgrade with zero workflow changes                                        |

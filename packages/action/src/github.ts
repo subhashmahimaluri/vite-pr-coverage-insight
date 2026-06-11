@@ -1,4 +1,4 @@
-import type { GitHub } from "@actions/github/lib/utils";
+import type { GitHub } from '@actions/github/lib/utils';
 
 export async function upsertCoverageComment({
   octokit,
@@ -6,7 +6,7 @@ export async function upsertCoverageComment({
   repo,
   prNumber,
   body,
-  botTag = "vite-pr-coverage-insight",
+  botTag = 'vite-pr-coverage-insight',
 }: {
   octokit: InstanceType<typeof GitHub>;
   owner: string;
@@ -21,9 +21,7 @@ export async function upsertCoverageComment({
     repo,
   });
 
-  const existing = comments.find((c) =>
-    c.body?.includes(`Reported by **${botTag}**`)
-  );
+  const existing = comments.find((c) => c.body?.includes(`Reported by **${botTag}**`));
 
   const taggedBody = `<!-- coverage-report:${botTag} -->\n\n${body}\n\n_Reported by **${botTag}**_`;
 

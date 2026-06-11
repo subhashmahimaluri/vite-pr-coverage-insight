@@ -31,6 +31,7 @@ Steps: new reusable workflow `baseline.yml` (and composite action `coverage-insi
 Accept: pushing to main produces a commit on `coverage-baseline` containing the summary keyed by SHA; cache entry exists; runtime overhead of store step <5s.
 
 **Prompt:**
+
 > Implement the baseline publisher from docs/plan/phase-2-performance.md. Create packages/action/src/baseline.ts and a second action entry (action-baseline.yml or a `mode: baseline` input): given a coverage-summary.json path, commit it to an orphan branch coverage-baseline as baselines/<sha>.json with a meta header (sha, ref, timestamp), prune to the newest 200 entries, and also save it to actions/cache with key covins-baseline-<sha>. Include a reusable workflow example in docs. Unit-test the pruning and path logic; e2e-test against this repo.
 
 ## Stage 2.2 — Baseline resolver in the action
@@ -40,6 +41,7 @@ Steps: in PR mode, resolve base coverage automatically: compute `merge-base` SHA
 Accept: PR workflow with no `base` input produces a correct diff using stored baseline; ancestor fallback and no-baseline paths covered by tests; resolution adds <3s.
 
 **Prompt:**
+
 > Implement the baseline resolver from docs/plan/phase-2-performance.md stage 2.2. In PR mode the action must auto-resolve base coverage: merge-base SHA via octokit compare API, then actions/cache restore, then fetch baselines/<sha>.json from the coverage-baseline branch, then walk first-parent ancestors (max 50) accepting the nearest baseline and noting staleness in the report, finally a graceful no-baseline report showing absolute coverage only. The existing explicit base input must still override everything. Mock octokit in tests; cover all four resolution paths.
 
 ## Stage 2.3 — Single-run workflow templates & migration guide
@@ -49,6 +51,7 @@ Steps: rewrite README quick-start: PR workflow runs `npm test -- --coverage` onc
 Accept: a fresh repo following the quick-start gets PR comments with a single test run; templates lint clean with actionlint.
 
 **Prompt:**
+
 > Rewrite the README quick-start and add docs/migration-v1-to-v2.md per docs/plan/phase-2-performance.md stage 2.3. Provide two copy-paste workflows: coverage-baseline.yml (on push to main, single test run, publish baseline via the action's baseline mode) and pr-coverage.yml (single HEAD test run, action auto-resolves baseline). Both with setup-node npm caching and concurrency cancel-in-progress. Include a before/after table explaining why this halves CI time. Validate workflows with actionlint.
 
 ## Stage 2.4 — Optional further speedups
@@ -58,4 +61,5 @@ Steps (each opt-in, documented, off by default): vitest `--changed`-style affect
 Accept: docs section "Going faster" with tradeoffs; sharded fixture run merges to identical totals as single run.
 
 **Prompt:**
+
 > Add the opt-in speedups from docs/plan/phase-2-performance.md stage 2.4: (1) document affected-only testing with vitest --changed plus a nightly full-coverage workflow that refreshes the baseline, with an honest tradeoffs section; (2) support merged coverage input — accept a directory of coverage-summary.json shards and merge them before diffing, with tests proving merged totals equal a single run; (3) docs for paths-filter to skip the action on docs-only PRs.

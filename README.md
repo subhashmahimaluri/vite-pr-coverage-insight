@@ -27,25 +27,25 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       # Setup and run tests on PR
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18
-      
+
       - name: Install dependencies
         run: yarn install
-      
+
       - name: Run tests with coverage
         run: yarn test:coverage
-        continue-on-error: true  # Continue even if tests fail
-      
+        continue-on-error: true # Continue even if tests fail
+
       - name: Save PR coverage
         run: |
           mkdir -p pr-coverage
           cp coverage/coverage-summary.json pr-coverage/
-          
+
       # Generate test failures JSON if tests failed
       - name: Generate test failures JSON
         run: |
@@ -54,24 +54,24 @@ jobs:
           else
             echo '{"numFailedTests": 0, "numTotalTests": 0, "failedTests": []}' > test-failures.json
           fi
-      
+
       # Checkout main to compare base coverage
       - name: Checkout main branch
         run: |
           git fetch origin main
           git checkout origin/main
-      
+
       - name: Install dependencies (main)
         run: yarn install
-      
+
       - name: Run coverage on main
         run: yarn test:coverage
-      
+
       - name: Save base coverage
         run: |
           mkdir -p base-coverage
           cp coverage/coverage-summary.json base-coverage/
-      
+
       # Run PR Coverage Insight Action
       - name: Run vite-pr-coverage-insight action
         uses: subhashmahimaluri/vite-pr-coverage-insight@v1.3.0
@@ -85,13 +85,13 @@ jobs:
 
 ## Inputs
 
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `github-token` | GitHub token for PR comment | Yes | - |
-| `base` | Path to base coverage-summary.json | Yes | - |
-| `head` | Path to PR coverage-summary.json | Yes | - |
-| `test-failures` | Path to test failures JSON file | No | - |
-| `use-check-run` | Whether to use GitHub Check Run API | No | `false` |
+| Input           | Description                         | Required | Default |
+| --------------- | ----------------------------------- | -------- | ------- |
+| `github-token`  | GitHub token for PR comment         | Yes      | -       |
+| `base`          | Path to base coverage-summary.json  | Yes      | -       |
+| `head`          | Path to PR coverage-summary.json    | Yes      | -       |
+| `test-failures` | Path to test failures JSON file     | No       | -       |
+| `use-check-run` | Whether to use GitHub Check Run API | No       | `false` |
 
 ## Test Failures JSON Format
 

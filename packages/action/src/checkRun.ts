@@ -1,4 +1,4 @@
-import { getOctokit, context } from "@actions/github";
+import { getOctokit, context } from '@actions/github';
 
 /**
  * Posts a coverage report as a GitHub check run
@@ -7,13 +7,13 @@ export async function postCoverageCheckRun({
   token,
   title,
   summary,
-  conclusion = "success",
-  name = "📊 Vite Coverage Report",
+  conclusion = 'success',
+  name = '📊 Vite Coverage Report',
 }: {
   token: string;
   title: string;
   summary: string;
-  conclusion?: "success" | "failure" | "neutral";
+  conclusion?: 'success' | 'failure' | 'neutral';
   name?: string;
 }): Promise<void> {
   const octokit = getOctokit(token);
@@ -25,7 +25,7 @@ export async function postCoverageCheckRun({
     repo,
     name,
     head_sha,
-    status: "completed",
+    status: 'completed',
     conclusion,
     output: {
       title,

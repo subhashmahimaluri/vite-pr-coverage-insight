@@ -7,12 +7,12 @@ describe('compareCoverage (totals)', () => {
     const { base, head } = loadFixturePair('improvement');
     const rows = compareCoverage(base, head);
 
-    expect(rows.map(r => r.metric)).toEqual(['statements', 'branches', 'functions', 'lines']);
+    expect(rows.map((r) => r.metric)).toEqual(['statements', 'branches', 'functions', 'lines']);
     for (const row of rows) {
       expect(row.delta).toBeGreaterThan(0);
       expect(row.symbol).toBe('⬆️');
     }
-    expect(rows.find(r => r.metric === 'lines')).toEqual({
+    expect(rows.find((r) => r.metric === 'lines')).toEqual({
       metric: 'lines',
       base: 75,
       pr: 90,
@@ -48,7 +48,7 @@ describe('compareCoverage (totals)', () => {
     delete (brokenBase.total.lines as { pct?: number }).pct;
     delete (brokenHead.total.lines as { pct?: number }).pct;
 
-    const lines = compareCoverage(brokenBase, brokenHead).find(r => r.metric === 'lines')!;
+    const lines = compareCoverage(brokenBase, brokenHead).find((r) => r.metric === 'lines')!;
     expect(lines).toEqual({ metric: 'lines', base: 0, pr: 0, delta: 0, symbol: '➖' });
   });
 
@@ -56,7 +56,7 @@ describe('compareCoverage (totals)', () => {
     const { base, head } = loadFixturePair('regression');
     const rows = compareCoverage(base, head);
 
-    const lines = rows.find(r => r.metric === 'lines')!;
+    const lines = rows.find((r) => r.metric === 'lines')!;
     expect(lines.delta).toBe(-13.81); // 76.19 - 90
   });
 });
@@ -87,7 +87,7 @@ describe('compareFileCoverage (per file)', () => {
     const { base, head } = loadFixturePair('regression');
     const result = compareFileCoverage(base, head);
 
-    const math = result.modifiedFiles.find(f => f.file === '/app/src/math.ts')!;
+    const math = result.modifiedFiles.find((f) => f.file === '/app/src/math.ts')!;
     expect(math.metrics.lines).toEqual({
       base: 90,
       pr: 72.73,
@@ -109,7 +109,7 @@ describe('compareFileCoverage (per file)', () => {
     const { base, head } = loadFixturePair('deleted-file');
     const result = compareFileCoverage(base, head);
 
-    const files = [...result.newFiles, ...result.modifiedFiles].map(f => f.file);
+    const files = [...result.newFiles, ...result.modifiedFiles].map((f) => f.file);
     expect(files).not.toContain('/app/src/legacy.ts');
   });
 
@@ -117,7 +117,7 @@ describe('compareFileCoverage (per file)', () => {
     const { base, head } = loadFixturePair('improvement');
     const result = compareFileCoverage(base, head);
 
-    const math = result.modifiedFiles.find(f => f.file === '/app/src/math.ts')!;
+    const math = result.modifiedFiles.find((f) => f.file === '/app/src/math.ts')!;
     expect(math.uncoveredLines).toEqual([12, 13, 14, 42]);
   });
 });

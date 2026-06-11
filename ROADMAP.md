@@ -76,12 +76,12 @@ Goal: procurement-ready.
 
 ## Risks & mitigations
 
-| Risk | Mitigation |
-|---|---|
-| GitHub deprecates node16 actions before Phase 1 ships | Phase 1 runtime bump is the very first task |
-| AI cost/trust blocks enterprise adoption | opt-in, budgets, redaction, audit logs (Phase 4 design) |
-| Scope creep into hosted SaaS | static-artifact-first; SaaS is an explicit Phase 6 decision gate |
-| Solo-maintainer bus factor | tests + CI from Phase 1; changesets make releases mechanical |
+| Risk                                                  | Mitigation                                                       |
+| ----------------------------------------------------- | ---------------------------------------------------------------- |
+| GitHub deprecates node16 actions before Phase 1 ships | Phase 1 runtime bump is the very first task                      |
+| AI cost/trust blocks enterprise adoption              | opt-in, budgets, redaction, audit logs (Phase 4 design)          |
+| Scope creep into hosted SaaS                          | static-artifact-first; SaaS is an explicit Phase 6 decision gate |
+| Solo-maintainer bus factor                            | tests + CI from Phase 1; changesets make releases mechanical     |
 
 ## North-star metrics
 
