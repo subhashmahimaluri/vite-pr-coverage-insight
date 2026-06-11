@@ -157,6 +157,7 @@ live in [examples/workflows/](examples/workflows/).
 | `annotations`     | Diff annotations: `all` \| `coverage` \| `failed-tests` \| `none`                                                 | No       | `all`               |
 | `ai`              | `off` \| `comment` \| `review` — see [AI assistance](#ai-assistance-optional)                                     | No       | `off`               |
 | `ai-can-block`    | Only with `ai: review` — allow a high-risk AI verdict to set the check run neutral                                | No       | `false`             |
+| `cache`           | `off` disables Actions-cache acceleration of baseline lookups (the baseline branch is always the source of truth) | No       | `on`                |
 
 \* required in `report` mode. Explicit `base:` works exactly as in v1 and
 overrides baseline resolution.

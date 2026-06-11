@@ -520,7 +520,9 @@ function failedTestsSection(report: CoverageReport): string {
   let first = true;
   for (const [filePath, tests] of bySuite) {
     const url = blobUrl(report, filePath);
-    const suiteLabel = url ? `<a href="${url}"><code>${filePath}</code></a>` : `<code>${filePath}</code>`;
+    const suiteLabel = url
+      ? `<a href="${url}"><code>${filePath}</code></a>`
+      : `<code>${filePath}</code>`;
     lines.push(
       `<details${first ? ' open' : ''}>`,
       `<summary>🔴 ${suiteLabel} — ${plural(tests.length, 'failed test')}</summary>`,
