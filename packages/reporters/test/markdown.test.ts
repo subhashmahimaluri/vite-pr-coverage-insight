@@ -186,3 +186,55 @@ describe('renderMarkdown cross-state rules', () => {
     expect(md).toContain('https://example.com/report');
   });
 });
+
+describe('visuals modes', () => {
+  it('images: <picture> with light/dark variants, plus mermaid', () => {
+    const md = renderMarkdown(
+      report({
+        history: [
+          { sha: 'a1', lines: 80 },
+          { sha: 'b2', lines: 85 },
+          { sha: 'c3', lines: 90 },
+        ],
+      }),
+      {
+        visuals: 'images',
+        badgeImages: { light: 'https://raw.test/l.svg', dark: 'https://raw.test/d.svg' },
+      }
+    );
+    expect(md).toContain('<picture>');
+    expect(md).toContain('prefers-color-scheme: dark');
+    expect(md).toContain('https://raw.test/l.svg');
+    expect(md).toContain('```mermaid');
+    expect(md).toMatchSnapshot();
+  });
+
+  it('mermaid: chart but no picture (private-repo auto fallback)', () => {
+    const md = renderMarkdown(
+      report({
+        history: [
+          { sha: 'a1', lines: 80 },
+          { sha: 'b2', lines: 85 },
+        ],
+      }),
+      { visuals: 'mermaid' }
+    );
+    expect(md).not.toContain('<picture>');
+    expect(md).toContain('xychart-beta');
+  });
+
+  it('text: no mermaid, no picture — unicode trend column only', () => {
+    const md = renderMarkdown(
+      report({
+        history: [
+          { sha: 'a1', lines: 80 },
+          { sha: 'b2', lines: 85 },
+        ],
+      }),
+      { visuals: 'text' }
+    );
+    expect(md).not.toContain('<picture>');
+    expect(md).not.toContain('mermaid');
+    expect(md).toContain('▁'); // unicode sparkline survives
+  });
+});

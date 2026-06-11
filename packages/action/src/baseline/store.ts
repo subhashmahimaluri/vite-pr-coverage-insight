@@ -74,6 +74,7 @@ export type BaselineOctokit = {
       }): Promise<{ data: { filename: string }[] }>;
     };
     repos: {
+      get(p: { owner: string; repo: string }): Promise<{ data: { private: boolean } }>;
       getContent(p: { owner: string; repo: string; path: string; ref: string }): Promise<{
         data: unknown;
       }>;

@@ -17,6 +17,19 @@ Goal: the report UX designed in planning — all states, richer visuals, history
 
 Cross-state rules: one comment updated in place (D5); verdict in line 1 (visible in notification previews); thresholds always shown next to actuals; JSON artifact emitted in **every** state (D6); AI sections fenced + labeled `generated` (D7); changed files always before full table (full table collapsed).
 
+## GitHub comment rendering constraints (binding for stages 4.2/4.3)
+
+GitHub sanitizes PR comments: all CSS, `style` attributes, colored divs, and layout HTML are **stripped**. Plain markdown alone produces a flat, generic-looking comment. The renderer must use the full set of techniques GitHub actually allows, in this priority order:
+
+1. **Generated SVG images** (the main lever): render the metric band (cards + sparklines + deltas), regression bars, and badges as SVG files; commit to the `coverage-baseline` branch; embed via image links. Inside an image we control colors/fonts/layout completely. Use `<picture>` with `prefers-color-scheme` source variants for light/dark.
+2. **Mermaid blocks**: trend chart as ` ```mermaid xychart-beta ` — GitHub renders it natively, **works on private repos with zero image hosting**. This is the default trend rendering; SVG images are the upgrade when usable.
+3. **GitHub alerts**: `[!NOTE]`, `[!WARNING]`, `[!CAUTION]` blockquotes for verdict/severity callouts — native colored rendering.
+4. **Allowed HTML subset only**: `<details>/<summary>`, `<table>`, `<img>`, `<picture>`, `<sub>/<sup>`, `<kbd>`. Tables use `🟢🟡🔴` + `▲▼` + bold for status — never assume color styling.
+
+Private-repo rule: GitHub's camo proxy cannot fetch authenticated raw URLs, so when `visuals: 'auto'` detects a private repo, fall back to mermaid + unicode sparklines (`▁▂▄▆█`) + alerts. Config `visuals: 'images' | 'mermaid' | 'text' | 'auto'` (default auto).
+
+The pixel-perfect designed UX (treemap, line-level view, interactive trends) is **not** a comment goal — it lives in the stage 4.4 HTML artifact, linked prominently from every comment.
+
 ## Stage 4.1 — JSON reporter (versioned schema)
 
 Steps: `packages/reporters/json` — `coverage-report.json` with `schemaVersion: 1`: totals, per-file metrics + deltas, uncovered ranges, PolicyResult, test failures, state id, baseline meta (sha, staleness). Uploaded as artifact every run. This is the integration surface for HTML, agents, skills.
@@ -35,7 +48,7 @@ Accept: snapshot test per state; comment under GitHub's 65k char limit even for 
 
 **Prompt:**
 
-> Rewrite the markdown PR comment renderer per docs/plan/phase-4-reports-visuals.md stage 4.2. Input is only the stage 4.1 JSON report. Implement all 8 states and the cross-state rules (in-place comment marker, verdict first line, changed-files first, collapsed full table, regression severity badges, threshold compliance table with gap column, shortest-path-to-green ranking, failed-suite excerpts truncated sensibly). Enforce GitHub's 65536-char comment limit with graceful truncation that links to the HTML artifact. Snapshot tests for each state plus a 500-file truncation test.
+> Rewrite the markdown PR comment renderer per docs/plan/phase-4-reports-visuals.md stage 4.2, strictly following the "GitHub comment rendering constraints" section in that file. Input is only the stage 4.1 JSON report. Implement all 8 states and the cross-state rules (in-place comment marker, verdict first line, changed-files first, collapsed full table, regression severity badges, threshold compliance table with gap column, shortest-path-to-green ranking, failed-suite excerpts truncated sensibly). Use GitHub alert blocks ([!NOTE]/[!WARNING]/[!CAUTION]) for verdict callouts, status circles and delta arrows in tables, mermaid xychart-beta for the trend section, and image slots for the SVG visuals coming in stage 4.3 (placeholder behind config visuals mode). Enforce GitHub's 65536-char comment limit with graceful truncation that links to the HTML artifact. Snapshot tests for each state plus a 500-file truncation test.
 
 ## Stage 4.3 — Trend history & SVG badges
 
@@ -45,7 +58,7 @@ Accept: comment shows 30-run sparkline images; badge URLs stable; works on priva
 
 **Prompt:**
 
-> Implement trend history and badges per docs/plan/phase-4-reports-visuals.md stage 4.3. packages/history: read the coverage-baseline branch (from phase 2) as a time series, expose lastN(metric). Generate compact SVG sparklines and delta badges per metric, commit them to the history branch under badges/, reference them as images in the PR comment. Add a unicode block-character sparkline fallback (config flag, default on for private repos where raw URLs need auth). Also emit a shields.io endpoint JSON for README badges. Test SVG generation deterministically (fixed series in, exact SVG out).
+> Implement trend history and SVG visuals per docs/plan/phase-4-reports-visuals.md stage 4.3, following the "GitHub comment rendering constraints" section. packages/history: read the coverage-baseline branch (from phase 2) as a time series, expose lastN(metric). Generate one composite metric-band SVG (four metric cards with value, delta arrow, and 30-run sparkline, light and dark variants embedded via picture/prefers-color-scheme) plus per-metric delta badges; commit them to the history branch under badges/<pr-or-branch>/ and reference them as images in the PR comment. Implement config visuals: images|mermaid|text|auto — auto detects private repos via the API and falls back to mermaid xychart trend plus unicode block sparklines since camo cannot proxy authenticated raw URLs. Also emit a shields.io endpoint JSON for README badges. Test SVG generation deterministically (fixed series in, exact SVG out) and test the auto fallback path.
 
 ## Stage 4.4 — Interactive HTML artifact
 

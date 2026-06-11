@@ -41,6 +41,8 @@ export const configSchema = z
     reporters: z.array(z.string()).default(['markdown', 'json']),
     /** use unicode sparklines instead of SVG image links (private repos) */
     unicodeSparklines: z.boolean().default(true),
+    /** comment visuals: SVG images, mermaid charts, plain text, or auto-detect by repo visibility */
+    visuals: z.enum(['images', 'mermaid', 'text', 'auto']).default('auto'),
     projects: z.array(projectSchema).optional(),
   })
   .strict();

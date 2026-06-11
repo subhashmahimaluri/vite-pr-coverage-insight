@@ -24,6 +24,10 @@ export const COMMENT_MARKER = '<!-- coverage-insight -->';
 export type RenderMarkdownOptions = {
   /** link target for the self-contained HTML artifact */
   htmlReportUrl?: string;
+  /** resolved visuals mode ('auto' is resolved by the caller via repo visibility) */
+  visuals?: 'images' | 'mermaid' | 'text';
+  /** raw URLs of the committed metric-band SVGs (images mode only) */
+  badgeImages?: { light: string; dark: string };
   /** GitHub's hard limit is 65536; default leaves headroom for AI sections */
   maxChars?: number;
 };
@@ -70,7 +74,7 @@ function fmtDeltaRich(delta: number | null): string {
   if (delta === 0) return '(±0.0%)';
   const sign = delta > 0 ? '+' : '-';
   const color = delta > 0 ? 'green' : 'red';
-  const arrow = delta > 0 ? '🔼' : '🔻';
+  const arrow = delta > 0 ? '▲' : '▼';
   return `($\\color{${color}}{\\textsf{${sign}${Math.abs(delta).toFixed(2)}\\%}}$ ${arrow})`;
 }
 
@@ -377,9 +381,9 @@ function complianceSection(report: CoverageReport): string {
     const req = required[key] as number;
     const gap = Math.round((m.head - req) * 100) / 100;
     const status = gap >= 0 ? '✅ pass' : '❌ fail';
-    lines.push(
-      `| ${METRIC_LABELS[key]} | ${req}% | ${fmtPct(m.head)} | ${fmtDelta(gap)} | ${status} |`
-    );
+    const label = gap >= 0 ? METRIC_LABELS[key] : `**${METRIC_LABELS[key]}**`;
+    const pr = gap >= 0 ? fmtPct(m.head) : `**${fmtPct(m.head)}**`;
+    lines.push(`| ${label} | ${req}% | ${pr} | ${fmtDelta(gap)} | ${status} |`);
   }
   return lines.join('\n');
 }
@@ -651,13 +655,28 @@ type Section = {
   changedFiles?: { files: FileReport[]; withDeltas: boolean };
 };
 
-function sectionsFor(report: CoverageReport, withDeltas: boolean): Section[] {
+function metricBandSection(opts: RenderMarkdownOptions): string {
+  if (opts.visuals !== 'images' || !opts.badgeImages) return '';
+  return [
+    '<picture>',
+    `  <source media="(prefers-color-scheme: dark)" srcset="${opts.badgeImages.dark}">`,
+    `  <img alt="coverage metrics: value, delta and 30-run trend per metric" src="${opts.badgeImages.light}">`,
+    '</picture>',
+  ].join('\n');
+}
+
+function sectionsFor(
+  report: CoverageReport,
+  withDeltas: boolean,
+  opts: RenderMarkdownOptions
+): Section[] {
   const files = report.files ?? [];
   const sections: Section[] = [];
   const push = (text: string, flags: Omit<Section, 'text'> = {}) => {
     if (text) sections.push({ text, ...flags });
   };
 
+  push(metricBandSection(opts), { protected: true });
   push(stalenessNote(report), { protected: true });
 
   const deltaGroups = (withDeltasFlag: boolean) => {
@@ -668,7 +687,7 @@ function sectionsFor(report: CoverageReport, withDeltas: boolean): Section[] {
       push(newFilesSection(report));
       push(reducedFilesSection(report));
     }
-    push(trendChartSection(report));
+    if (opts.visuals !== 'text') push(trendChartSection(report));
     push(fullFilesSection(report, withDeltasFlag), { fullTable: true });
     push(testRunSection(report));
   };
@@ -733,7 +752,7 @@ export function renderMarkdown(report: CoverageReport, opts: RenderMarkdownOptio
   }
 
   const withDeltas = report.baseline !== null || (report.totals?.lines.base ?? null) !== null;
-  let sections = sectionsFor(report, withDeltas);
+  let sections = sectionsFor(report, withDeltas, opts);
   let output = assemble(COMMENT_MARKER, header, [
     ...sections.map((s) => s.text),
     footer(report, opts),

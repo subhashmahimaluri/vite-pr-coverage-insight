@@ -12,3 +12,4 @@ export {
   sparklinePath,
 } from './publish';
 export type { BadgeFile, CommentImageOptions } from './publish';
+export { renderMetricBandSvg, metricBandPath } from './metricBand';

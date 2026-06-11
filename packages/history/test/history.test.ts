@@ -117,3 +117,23 @@ describe('publish helpers', () => {
     );
   });
 });
+
+describe('metric band (composite SVG)', () => {
+  it('is deterministic with light/dark variants and delta coloring', async () => {
+    const { renderMetricBandSvg, metricBandPath } = await import('../src/metricBand');
+    const series = entriesToSeries([
+      entry('b', '2026-06-11T00:00:00Z', 90),
+      entry('a', '2026-06-10T00:00:00Z', 85),
+    ]);
+    const light = renderMetricBandSvg(series, 'light');
+    expect(light).toBe(renderMetricBandSvg(series, 'light'));
+    expect(light).toContain('Statements');
+    expect(light).toContain('90.0%');
+    expect(light).toContain('▲5.0');
+    expect(light).toContain('#1a7f37'); // green for positive delta
+    const dark = renderMetricBandSvg(series, 'dark');
+    expect(dark).not.toBe(light);
+    expect(dark).toContain('#0d1117');
+    expect(metricBandPath('dark')).toBe('badges/metric-band-dark.svg');
+  });
+});

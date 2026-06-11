@@ -24,7 +24,13 @@ import {
   type BuildReportInput,
   type InputError,
 } from '@coverage-insight/reporters';
-import { entriesToSeries, readHistoryEntries } from '@coverage-insight/history';
+import {
+  badgeFiles,
+  entriesToSeries,
+  metricBandPath,
+  readHistoryEntries,
+  renderMetricBandSvg,
+} from '@coverage-insight/history';
 import { runAiSections } from './aiSections';
 import { collectAnnotations, type AnnotationsMode } from './annotations';
 import { publishBaseline } from './baseline/publish';
@@ -78,6 +84,24 @@ async function runBaselineMode(): Promise<void> {
   const octokit = getOctokit(githubToken) as unknown as BaselineOctokit;
   const { owner, repo } = context.repo;
 
+  // regenerate badges (metric band light/dark, sparklines, shields endpoints)
+  // from the history series including this run, committed in the same push
+  let extraFiles: { path: string; content: string }[] = [];
+  try {
+    const existing = await readHistoryEntries((p) =>
+      readBranchFile(octokit, { owner, repo, branch, path: p })
+    );
+    const timestamp = new Date().toISOString();
+    const series = entriesToSeries([{ sha: context.sha, timestamp, summary }, ...existing]);
+    extraFiles = [
+      ...badgeFiles(series),
+      { path: metricBandPath('light'), content: renderMetricBandSvg(series, 'light') },
+      { path: metricBandPath('dark'), content: renderMetricBandSvg(series, 'dark') },
+    ];
+  } catch (error) {
+    console.warn(`⚠️ Badge generation skipped: ${error}`);
+  }
+
   const result = await publishBaseline({
     octokit,
     owner,
@@ -86,6 +110,7 @@ async function runBaselineMode(): Promise<void> {
     ref: context.ref,
     summary,
     branch,
+    extraFiles,
   });
 
   console.log(
@@ -254,6 +279,26 @@ async function runReportMode(): Promise<void> {
     }
   }
 
+  // visuals mode: config wins; 'auto' detects repo visibility — camo cannot
+  // proxy authenticated raw URLs, so private repos get mermaid + unicode
+  let visuals: 'images' | 'mermaid' | 'text' =
+    config.visuals === 'auto' ? 'mermaid' : config.visuals;
+  if (config.visuals === 'auto') {
+    try {
+      const { data } = await octokit.rest.repos.get({ owner, repo });
+      visuals = data.private ? 'mermaid' : 'images';
+    } catch {
+      visuals = 'mermaid';
+    }
+  }
+  const badgeImages =
+    visuals === 'images' && history && history.length > 0
+      ? {
+          light: `https://raw.githubusercontent.com/${owner}/${repo}/${baselineBranch}/${metricBandPath('light')}`,
+          dark: `https://raw.githubusercontent.com/${owner}/${repo}/${baselineBranch}/${metricBandPath('dark')}`,
+        }
+      : undefined;
+
   const report = buildReport({
     head: head ?? { total: emptyTotals(), files: [] },
     base,
@@ -288,7 +333,7 @@ async function runReportMode(): Promise<void> {
     fs.writeFileSync(AI_AUDIT, ai.auditJson);
   }
 
-  const markdown = renderMarkdown(report) + ai.sections;
+  const markdown = renderMarkdown(report, { visuals, badgeImages }) + ai.sections;
 
   let conclusion: 'success' | 'failure' | 'neutral' =
     policy.verdict === 'fail' ? 'failure' : policy.verdict === 'warn' ? 'neutral' : 'success';

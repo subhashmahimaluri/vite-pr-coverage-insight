@@ -33,6 +33,8 @@ export async function publishBaseline(params: {
   branch?: string;
   maxEntries?: number;
   timestamp?: string;
+  /** additional files committed alongside the entry (e.g. badges/*.svg) */
+  extraFiles?: { path: string; content: string }[];
 }): Promise<PublishResult> {
   const {
     octokit,
@@ -91,6 +93,12 @@ export async function publishBaseline(params: {
       type: 'blob',
       content: JSON.stringify({ entries: kept }, null, 2),
     },
+    ...(params.extraFiles ?? []).map((f) => ({
+      path: f.path,
+      mode: '100644' as const,
+      type: 'blob' as const,
+      content: f.content,
+    })),
     // deleting pruned baselines = tree entry with sha: null against base_tree
     ...pruned.map((p) => ({
       path: baselinePath(p),
