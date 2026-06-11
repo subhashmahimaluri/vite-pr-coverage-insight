@@ -40,9 +40,7 @@ export const fileReportSchema = z.object({
   /** 'new' | 'modified' | 'unchanged' relative to baseline */
   change: z.enum(['new', 'modified', 'unchanged']),
   metrics: z.record(metricKeySchema, metricDeltaSchema),
-  uncoveredRanges: z
-    .array(z.object({ start: z.number().int(), end: z.number().int() }))
-    .optional(),
+  uncoveredRanges: z.array(z.object({ start: z.number().int(), end: z.number().int() })).optional(),
 });
 
 export const policyViolationSchema = z.object({

@@ -24,7 +24,10 @@ export type CoverageModel = {
 export function summaryToModel(summary: CoverageSummary): CoverageModel {
   const files: FileCoverage[] = Object.entries(summary)
     .filter(([path]) => path !== 'total')
-    .map(([path, metrics]) => {
+    .map(([path, entry]) => {
+      const metrics = entry as CoverageSummary[string] & {
+        lines: { details?: { line: number; covered: boolean }[] };
+      };
       const uncovered = metrics.lines.details
         ?.filter((d) => !d.covered)
         .map((d) => d.line)
