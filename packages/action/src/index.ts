@@ -398,7 +398,11 @@ async function runReportMode(): Promise<void> {
       light: `${rawBase}/${metricBandPath('light')}`,
       dark: `${rawBase}/${metricBandPath('dark')}`,
     };
-    bandCaption = `Base branch coverage — last ${Math.min(historySeries.length, 30)} baseline runs`;
+    // overwritten below when the live per-PR band commits; the hint stays
+    // otherwise so the missing permission is visible in the comment itself
+    bandCaption =
+      `Base branch coverage — last ${Math.min(historySeries.length, 30)} baseline runs · ` +
+      'add `contents: write` to this workflow to show **this PR’s** coverage here';
     if (head) {
       try {
         const headPoint: HistoryPoint = {
