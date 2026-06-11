@@ -37,3 +37,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           head: coverage/coverage-summary.json
           # no `base:` — resolved from the baseline store automatically
+
+      # the action writes coverage-report.json (versioned schema) and a
+      # self-contained coverage-report.html on every run, including errors
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            coverage-report.json
+            coverage-report.html
+          if-no-files-found: warn

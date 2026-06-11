@@ -36,6 +36,8 @@ export const configSchema = z
     ratchetTolerance: z.number().min(0).max(100).default(0.1),
     ai: z.enum(['off', 'comment', 'review']).default('off'),
     aiCanBlock: z.boolean().default(false),
+    /** redaction mode: prompts carry paths/metrics/ranges only, never source */
+    aiRedact: z.boolean().default(false),
     reporters: z.array(z.string()).default(['markdown', 'json']),
     /** use unicode sparklines instead of SVG image links (private repos) */
     unicodeSparklines: z.boolean().default(true),

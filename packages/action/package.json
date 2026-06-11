@@ -12,10 +12,13 @@
     "build": "tsc -b && ncc build src/index.ts -o ../../dist --minify"
   },
   "dependencies": {
-    "@actions/cache": "^6.0.1",
+    "@actions/cache": "^4.1.0",
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.1",
-    "@coverage-insight/core": "1.0.0"
+    "@coverage-insight/agents": "1.0.0",
+    "@coverage-insight/core": "1.0.0",
+    "@coverage-insight/history": "1.0.0",
+    "@coverage-insight/reporters": "1.0.0"
   },
   "repository": {
     "type": "git",

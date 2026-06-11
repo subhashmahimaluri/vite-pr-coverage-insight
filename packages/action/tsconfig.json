@@ -10,5 +10,18 @@
     "sourceMap": false
   },
   "include": ["src"],
-  "references": [{ "path": "../core" }]
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../reporters"
+    },
+    {
+      "path": "../history"
+    },
+    {
+      "path": "../agents"
+    }
+  ]
 }

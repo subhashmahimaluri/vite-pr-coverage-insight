@@ -18,7 +18,8 @@ const DETERMINISTIC_SRC_DIRS = [
   'packages/cli/src',
 ];
 
-const STATIC_IMPORT = /(from\s+['"]@coverage-insight\/agents|require\(\s*['"]@coverage-insight\/agents)/;
+const STATIC_IMPORT =
+  /(from\s+['"]@coverage-insight\/agents|require\(\s*['"]@coverage-insight\/agents)/;
 
 function* walk(dir: string): Generator<string> {
   if (!fs.existsSync(dir)) return;

@@ -1,12 +1,11 @@
 import { getOctokit } from '@actions/github';
-import type { TestFailuresResult } from '@coverage-insight/core';
 import { postCoverageCheckRun } from './checkRun';
 import { upsertCoverageComment } from './github';
 
 /**
- * Posts the coverage report to the PR as a comment and optionally as a check run
- *
- * @param options Options for posting the coverage report
+ * Posts the rendered markdown as the single in-place PR comment (D5) and
+ * optionally as a check run whose conclusion the caller derives from the
+ * policy verdict (and, under double opt-in, the AI reviewer).
  */
 export async function postCoverageReport({
   token,
@@ -14,20 +13,19 @@ export async function postCoverageReport({
   repo,
   prNumber,
   markdown,
-  testFailures,
   useCheckRun = false,
+  conclusion = 'success',
 }: {
   token: string;
   owner: string;
   repo: string;
   prNumber: number;
   markdown: string;
-  testFailures?: TestFailuresResult | null;
   useCheckRun?: boolean;
+  conclusion?: 'success' | 'failure' | 'neutral';
 }): Promise<void> {
   const octokit = getOctokit(token);
 
-  // Post as a PR comment
   await upsertCoverageComment({
     octokit,
     owner,
@@ -36,22 +34,8 @@ export async function postCoverageReport({
     body: markdown,
   });
 
-  // Optionally post as a check run
   if (useCheckRun) {
     try {
-      // Determine conclusion based on coverage and test failures
-      let conclusion: 'success' | 'failure' | 'neutral' = 'success';
-
-      // If coverage decreased, set to neutral
-      if (markdown.includes('⬇️')) {
-        conclusion = 'neutral';
-      }
-
-      // If tests failed, set to failure
-      if (testFailures && testFailures.numFailedTests > 0) {
-        conclusion = 'failure';
-      }
-
       await postCoverageCheckRun({
         token,
         title: 'Coverage Report',

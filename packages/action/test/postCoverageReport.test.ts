@@ -5,7 +5,7 @@ const octokit = {
     issues: {
       listComments: vi.fn(),
       createComment: vi.fn(),
-      deleteComment: vi.fn(),
+      updateComment: vi.fn(),
     },
     checks: {
       create: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock('@actions/github', () => ({
   },
 }));
 
-import { upsertCoverageComment } from '../src/github';
+import { COMMENT_MARKER, upsertCoverageComment } from '../src/github';
 import { postCoverageReport } from '../src/postCoverageReport';
 
 const baseArgs = {
@@ -37,33 +37,54 @@ beforeEach(() => {
   octokit.rest.issues.listComments.mockResolvedValue({ data: [] });
 });
 
-describe('upsertCoverageComment', () => {
-  it('creates a tagged comment when none exists', async () => {
-    await upsertCoverageComment({ octokit: octokit as never, ...baseArgs, body: 'report' });
+describe('upsertCoverageComment (D5: one comment, updated in place)', () => {
+  it('creates the comment when none exists', async () => {
+    await upsertCoverageComment({
+      octokit: octokit as never,
+      ...baseArgs,
+      body: `${COMMENT_MARKER}\nreport`,
+    });
 
-    expect(octokit.rest.issues.deleteComment).not.toHaveBeenCalled();
+    expect(octokit.rest.issues.updateComment).not.toHaveBeenCalled();
     expect(octokit.rest.issues.createComment).toHaveBeenCalledWith(
-      expect.objectContaining({
-        issue_number: 42,
-        body: expect.stringContaining('<!-- coverage-report:vite-pr-coverage-insight -->'),
-      })
+      expect.objectContaining({ issue_number: 42, body: expect.stringContaining(COMMENT_MARKER) })
     );
   });
 
-  it('replaces the previous coverage comment instead of stacking', async () => {
+  it('updates the existing marked comment in place — never stacks or recreates', async () => {
     octokit.rest.issues.listComments.mockResolvedValue({
       data: [
         { id: 1, body: 'unrelated' },
-        { id: 2, body: 'old report\n\n_Reported by **vite-pr-coverage-insight**_' },
+        { id: 2, body: `${COMMENT_MARKER}\nold report` },
       ],
     });
 
-    await upsertCoverageComment({ octokit: octokit as never, ...baseArgs, body: 'new report' });
+    await upsertCoverageComment({
+      octokit: octokit as never,
+      ...baseArgs,
+      body: `${COMMENT_MARKER}\nnew report`,
+    });
 
-    expect(octokit.rest.issues.deleteComment).toHaveBeenCalledWith(
-      expect.objectContaining({ comment_id: 2 })
+    expect(octokit.rest.issues.updateComment).toHaveBeenCalledWith(
+      expect.objectContaining({ comment_id: 2, body: expect.stringContaining('new report') })
     );
-    expect(octokit.rest.issues.createComment).toHaveBeenCalledTimes(1);
+    expect(octokit.rest.issues.createComment).not.toHaveBeenCalled();
+  });
+
+  it('replaces a legacy v1 comment in place on upgrade', async () => {
+    octokit.rest.issues.listComments.mockResolvedValue({
+      data: [{ id: 7, body: 'old\n\n_Reported by **vite-pr-coverage-insight**_' }],
+    });
+
+    await upsertCoverageComment({
+      octokit: octokit as never,
+      ...baseArgs,
+      body: `${COMMENT_MARKER}\nv2 report`,
+    });
+
+    expect(octokit.rest.issues.updateComment).toHaveBeenCalledWith(
+      expect.objectContaining({ comment_id: 7 })
+    );
   });
 });
 
@@ -75,33 +96,13 @@ describe('postCoverageReport', () => {
     expect(octokit.rest.checks.create).not.toHaveBeenCalled();
   });
 
-  it('creates a success check run when coverage held steady', async () => {
-    await postCoverageReport({ ...baseArgs, markdown: 'all good ⬆️', useCheckRun: true });
-
-    expect(octokit.rest.checks.create).toHaveBeenCalledWith(
-      expect.objectContaining({ conclusion: 'success', head_sha: 'head-sha' })
-    );
-  });
-
-  it('marks the check run neutral when coverage decreased', async () => {
-    await postCoverageReport({ ...baseArgs, markdown: 'dropped ⬇️', useCheckRun: true });
-
-    expect(octokit.rest.checks.create).toHaveBeenCalledWith(
-      expect.objectContaining({ conclusion: 'neutral' })
-    );
-  });
-
-  it('marks the check run failed when tests failed', async () => {
-    await postCoverageReport({
-      ...baseArgs,
-      markdown: 'dropped ⬇️',
-      useCheckRun: true,
-      testFailures: { numFailedTests: 1, numTotalTests: 10, failedTests: [] },
-    });
-
-    expect(octokit.rest.checks.create).toHaveBeenCalledWith(
-      expect.objectContaining({ conclusion: 'failure' })
-    );
+  it('passes the caller-derived conclusion to the check run', async () => {
+    for (const conclusion of ['success', 'failure', 'neutral'] as const) {
+      await postCoverageReport({ ...baseArgs, markdown: 'r', useCheckRun: true, conclusion });
+      expect(octokit.rest.checks.create).toHaveBeenCalledWith(
+        expect.objectContaining({ conclusion, head_sha: 'head-sha' })
+      );
+    }
   });
 
   it('falls back to comment-only when the check run fails', async () => {

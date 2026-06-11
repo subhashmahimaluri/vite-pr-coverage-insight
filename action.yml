@@ -21,6 +21,14 @@ inputs:
     required: false
     description: 'Orphan branch used as the baseline/history store'
     default: 'coverage-baseline'
+  ai:
+    required: false
+    description: "AI assistance: 'off' (default, zero non-GitHub network calls), 'comment' (risk analysis + test suggestions), 'review' (adds advisory verdict)"
+    default: 'off'
+  ai-can-block:
+    required: false
+    description: "Only with ai: 'review' — allow a high-risk AI verdict to set the check run to neutral"
+    default: 'false'
   test-failures:
     required: false
     description: 'Path to test failures JSON file'
