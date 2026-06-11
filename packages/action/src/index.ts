@@ -423,7 +423,7 @@ async function runReportMode(): Promise<void> {
           message: `pr #${prNumber} metric band (${headPoint.sha.slice(0, 7)})`,
           files: (['light', 'dark'] as const).map((theme) => ({
             path: prMetricBandPath(prNumber, theme),
-            content: renderMetricBandSvg(prSeries, theme, { thresholds: config.thresholds }),
+            content: renderMetricBandSvg(prSeries, theme),
           })),
         });
         const bust = `?v=${headPoint.sha.slice(0, 7)}`; // unique camo URL per run

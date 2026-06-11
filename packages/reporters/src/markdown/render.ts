@@ -491,8 +491,13 @@ function testStatsRow(report: CoverageReport): string {
         : `**${t.numTotalSuites}**`
       : undefined;
 
-  const cells: [string, string][] = [['❌ Failed', `**${t.numFailedTests}**`]];
-  if (passed !== undefined) cells.push(['✅ Passed', `**${passed}**`]);
+  // red/green numbers (same LaTeX trick as the delta pills)
+  const red = (n: number) => `$\\color{red}{\\textbf{${n}}}$`;
+  const green = (n: number) => `$\\color{green}{\\textbf{${n}}}$`;
+  const cells: [string, string][] = [
+    ['❌ Failed', t.numFailedTests > 0 ? red(t.numFailedTests) : `**${t.numFailedTests}**`],
+  ];
+  if (passed !== undefined) cells.push(['✅ Passed', passed > 0 ? green(passed) : `**${passed}**`]);
   if (skipped !== undefined) cells.push(['⏭️ Skipped', `**${skipped}**`]);
   cells.push(['🧪 Total', `**${t.numTotalTests}**`]);
   if (suites !== undefined) cells.push(['📦 Suites', suites]);
@@ -531,8 +536,14 @@ function failedTestsSection(report: CoverageReport): string {
     for (const test of tests.slice(0, TESTS_PER_SUITE)) {
       lines.push(`- ❌ **${test.testName}**`);
       if (test.message) {
-        const excerpt = test.message.split('\n').slice(0, EXCERPT_MAX_LINES).join('\n');
-        lines.push('', '  ```', ...excerpt.split('\n').map((l) => `  ${l}`), '  ```', '');
+        // strip ANSI color codes and surrounding blank lines — raw escape
+        // sequences in the excerpt read as garbage in the comment
+        // eslint-disable-next-line no-control-regex
+        const clean = test.message.replace(/\x1b\[[0-9;]*m/g, '').replace(/^\n+|\n+$/g, '');
+        const excerpt = clean.split('\n').slice(0, EXCERPT_MAX_LINES).join('\n');
+        if (excerpt) {
+          lines.push('', '  ```', ...excerpt.split('\n').map((l) => `  ${l}`), '  ```', '');
+        }
       }
     }
     if (tests.length > TESTS_PER_SUITE) {
