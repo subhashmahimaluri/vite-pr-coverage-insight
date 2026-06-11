@@ -1,4 +1,3 @@
-// src/utils/github.ts
 import type { GitHub } from "@actions/github/lib/utils";
 
 export async function upsertCoverageComment({

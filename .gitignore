@@ -1,4 +1,9 @@
 node_modules/
-# dist/
-!dist/index.js
-!.gitkeep
+
+# workspace build output is never committed
+packages/*/dist/
+*.tsbuildinfo
+
+# only the bundled action entry is committed
+/dist/*
+!/dist/index.js

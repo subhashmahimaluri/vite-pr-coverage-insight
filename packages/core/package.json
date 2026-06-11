@@ -1,0 +1,22 @@
+{
+  "name": "@coverage-insight/core",
+  "version": "1.0.0",
+  "description": "Coverage comparison model, diff and markdown formatting — pure functions, no GitHub dependencies",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/subhashmahimaluri/vite-pr-coverage-insight.git",
+    "directory": "packages/core"
+  }
+}

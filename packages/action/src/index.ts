@@ -1,12 +1,14 @@
-// src/index.ts
 import { getInput } from "@actions/core";
 import { context } from "@actions/github";
 import fs from "fs";
 import path from "path";
-import { CoverageSummary } from "./utils/compareCoverage";
-import { generateCoverageReport } from "./formatCoverageMarkdown";
-import { postCoverageReport } from "./postCoverageCheckRun";
-import { parseTestFailures, TestFailuresResult } from "./utils/parseTestFailures";
+import {
+  CoverageSummary,
+  TestFailuresResult,
+  generateCoverageReport,
+} from "@coverage-insight/core";
+import { parseTestFailures } from "./parseTestFailures";
+import { postCoverageReport } from "./postCoverageReport";
 
 /**
  * Main entry point for the GitHub Action
@@ -26,13 +28,13 @@ async function run() {
 
     const base: CoverageSummary = JSON.parse(baseJson) || {};
     const pr: CoverageSummary = JSON.parse(headJson) || {};
-    
+
     // Parse test failures if provided
     let testFailures: TestFailuresResult | null = null;
     if (testFailuresPath) {
       testFailures = parseTestFailures(path.resolve(testFailuresPath));
     }
-    
+
     // Get PR information
     const { owner, repo } = context.repo;
     const prNumber = context.payload.pull_request?.number;
@@ -45,7 +47,7 @@ async function run() {
         `Invalid coverage data - missing 'total' field\n\n` +
         `Base coverage: ${base ? 'exists' : 'missing'}\n` +
         `PR coverage: ${pr ? 'exists' : 'missing'}`;
-        
+
       await postCoverageReport({
         token: githubToken,
         owner,
@@ -57,7 +59,6 @@ async function run() {
       });
       return;
     }
-
 
     // Generate the markdown report with PR information and test failures
     const markdown = generateCoverageReport(base, pr, testFailures, { owner, repo, prNumber }, !base.total || !pr.total);
@@ -72,9 +73,9 @@ async function run() {
       testFailures,
       useCheckRun
     });
-    
+
     console.log("✅ Coverage report successfully posted to PR");
-    
+
     // Log test failures but do not exit with an error code
     if (testFailures && testFailures.numFailedTests > 0) {
       console.warn(`⚠️ ${testFailures.numFailedTests} tests failed`);

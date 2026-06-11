@@ -1,26 +1,9 @@
-// src/utils/parseTestFailures.ts
 import fs from 'fs';
-
-/**
- * Represents a single test failure
- */
-export type TestFailure = {
-  testName: string;
-  filePath: string;
-};
-
-/**
- * Represents the result of parsing test failures
- */
-export type TestFailuresResult = {
-  numFailedTests: number;
-  numTotalTests: number;
-  failedTests: TestFailure[];
-};
+import type { TestFailuresResult } from '@coverage-insight/core';
 
 /**
  * Parses a test failures JSON file
- * 
+ *
  * @param filePath Path to the test failures JSON file
  * @returns Parsed test failures or null if file doesn't exist or is invalid
  */

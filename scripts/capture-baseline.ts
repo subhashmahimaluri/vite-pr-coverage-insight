@@ -2,8 +2,7 @@
 // diffed against a known-good baseline: npx tsx scripts/capture-baseline.ts <outfile>
 import fs from "fs";
 import path from "path";
-import { generateCoverageReport } from "../src/formatCoverageMarkdown";
-import type { TestFailuresResult } from "../src/utils/parseTestFailures";
+import { generateCoverageReport, TestFailuresResult } from "../packages/core/src";
 
 const fixturesDir = path.resolve(__dirname, "../fixtures");
 const scenarios = ["improvement", "regression", "new-file", "deleted-file", "identical"];
@@ -21,6 +20,7 @@ for (const scenario of scenarios) {
     `===== ${scenario} + failures =====\n${generateCoverageReport(base, head, failures, prInfo)}`
   );
 }
+
 const out = process.argv[2] ?? "baseline.md";
 fs.writeFileSync(out, sections.join("\n\n"));
 console.log(`wrote ${out}`);

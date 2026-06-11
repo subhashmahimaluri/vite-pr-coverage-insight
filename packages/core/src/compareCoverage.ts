@@ -1,41 +1,4 @@
-// src/utils/compareCoverage.ts
-export type CoverageSummary = {
-  total: {
-    lines: { pct: number; total: number; covered: number; skipped: number };
-    statements: { pct: number; total: number; covered: number; skipped: number };
-    functions: { pct: number; total: number; covered: number; skipped: number };
-    branches: { pct: number; total: number; covered: number; skipped: number };
-  };
-  [key: string]: {
-    lines: { pct: number; total: number; covered: number; skipped: number; details?: { line: number; covered: boolean }[] };
-    statements: { pct: number; total: number; covered: number; skipped: number };
-    functions: { pct: number; total: number; covered: number; skipped: number };
-    branches: { pct: number; total: number; covered: number; skipped: number };
-  };
-};
-
-export type FileCoverageResult = {
-  newFiles: {
-    file: string;
-    metrics: {
-      branches: number;
-      functions: number;
-      lines: number;
-      statements: number;
-    };
-    uncoveredLines: number[];
-  }[];
-  modifiedFiles: {
-    file: string;
-    metrics: {
-      branches: { base: number; pr: number; delta: number; symbol: string };
-      functions: { base: number; pr: number; delta: number; symbol: string };
-      lines: { base: number; pr: number; delta: number; symbol: string };
-      statements: { base: number; pr: number; delta: number; symbol: string };
-    };
-    uncoveredLines: number[];
-  }[];
-};
+import { CoverageSummary, FileCoverageResult } from './types';
 
 export function compareFileCoverage(base: CoverageSummary, pr: CoverageSummary): FileCoverageResult {
   const metrics = ['statements', 'branches', 'functions', 'lines'] as const;
@@ -56,7 +19,7 @@ export function compareFileCoverage(base: CoverageSummary, pr: CoverageSummary):
 
     // Check if this is a new file (exists in PR but not in base)
     const isNewFile = pr[file] && !base[file];
-    
+
     // Get uncovered lines
     const uncoveredLines: number[] = [];
     if (pr[file]?.lines?.details) {
@@ -70,7 +33,7 @@ export function compareFileCoverage(base: CoverageSummary, pr: CoverageSummary):
     if (isNewFile) {
       // Check if the new file has 100% coverage
       const hasFullCoverage = metrics.every(metric => pr[file][metric].pct === 100);
-      
+
       if (hasFullCoverage) {
         result.newFiles.push({
           file,
@@ -118,7 +81,7 @@ export function compareFileCoverage(base: CoverageSummary, pr: CoverageSummary):
 
       // Check if there are any changes in coverage
       const hasChanges = Object.values(fileMetrics).some(m => m.delta !== 0);
-      
+
       if (hasChanges) {
         result.modifiedFiles.push({
           file,
