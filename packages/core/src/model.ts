@@ -1,5 +1,7 @@
 import type { CoverageMetric, CoverageSummary } from './types';
 
+export type { CoverageMetric } from './types';
+
 export const METRIC_KEYS = ['statements', 'branches', 'functions', 'lines'] as const;
 export type MetricKey = (typeof METRIC_KEYS)[number];
 

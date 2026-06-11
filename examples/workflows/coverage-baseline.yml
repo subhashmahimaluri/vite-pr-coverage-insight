@@ -1,0 +1,35 @@
+# Publishes a coverage baseline on every push to main (Stage 2.1).
+# Copy into .github/workflows/ and adjust the test command.
+name: Coverage baseline
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write # commits baselines to the coverage-baseline branch
+
+concurrency:
+  group: coverage-baseline
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test -- --coverage
+
+      - uses: subhashmahimaluri/vite-pr-coverage-insight@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          mode: baseline
+          coverage: coverage/coverage-summary.json
