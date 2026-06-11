@@ -39,6 +39,10 @@ inputs:
     required: false
     description: 'Whether to use GitHub Check Run API'
     default: 'false'
+  annotations:
+    required: false
+    description: "Diff annotations published via the check run: 'all' (default), 'coverage' (uncovered lines in touched files), 'failed-tests', or 'none'"
+    default: 'all'
 runs:
   using: 'node24'
   main: 'dist/index.js'

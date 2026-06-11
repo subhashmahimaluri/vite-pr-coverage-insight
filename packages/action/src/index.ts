@@ -26,6 +26,7 @@ import {
 } from '@coverage-insight/reporters';
 import { entriesToSeries, readHistoryEntries } from '@coverage-insight/history';
 import { runAiSections } from './aiSections';
+import { collectAnnotations, type AnnotationsMode } from './annotations';
 import { publishBaseline } from './baseline/publish';
 import { getMergeBaseSha, resolveBaseline } from './baseline/resolve';
 import {
@@ -108,6 +109,7 @@ async function runReportMode(): Promise<void> {
   const baselineBranch = getInput('baseline-branch') || DEFAULT_BASELINE_BRANCH;
   const aiInput = getInput('ai') as Config['ai'] | '';
   const aiCanBlock = getInput('ai-can-block') === 'true';
+  const annotationsMode = (getInput('annotations') || 'all') as AnnotationsMode;
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
 
   const { owner, repo } = context.repo;
@@ -294,6 +296,16 @@ async function runReportMode(): Promise<void> {
     conclusion = ai.conclusionOverride;
   }
 
+  const annotations = collectAnnotations({
+    mode: annotationsMode,
+    report,
+    testFailures,
+    workspace,
+  });
+  if (annotations.length > 0) {
+    console.log(`🏷️ Publishing ${annotations.length} diff annotation(s) via the check run`);
+  }
+
   await postCoverageReport({
     token: githubToken,
     owner,
@@ -302,6 +314,7 @@ async function runReportMode(): Promise<void> {
     markdown,
     useCheckRun,
     conclusion,
+    annotations,
   });
 
   console.log(`✅ Coverage report posted (state: ${report.state}, verdict: ${policy.verdict})`);

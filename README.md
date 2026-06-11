@@ -140,6 +140,7 @@ live in [examples/workflows/](examples/workflows/).
 | `baseline-branch` | Orphan branch used as the baseline/history store                                   | No       | `coverage-baseline` |
 | `test-failures`   | Path to test failures JSON file                                                    | No       | -                   |
 | `use-check-run`   | Also publish a GitHub Check Run (conclusion follows the policy verdict)            | No       | `false`             |
+| `annotations`     | Diff annotations: `all` \| `coverage` \| `failed-tests` \| `none`                  | No       | `all`               |
 | `ai`              | `off` \| `comment` \| `review` — see [AI assistance](#ai-assistance-optional)      | No       | `off`               |
 | `ai-can-block`    | Only with `ai: review` — allow a high-risk AI verdict to set the check run neutral | No       | `false`             |
 

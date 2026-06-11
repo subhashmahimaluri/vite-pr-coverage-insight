@@ -1,11 +1,12 @@
 import { getOctokit } from '@actions/github';
+import type { Annotation } from './annotations';
 import { postCoverageCheckRun } from './checkRun';
 import { upsertCoverageComment } from './github';
 
 /**
- * Posts the rendered markdown as the single in-place PR comment (D5) and
- * optionally as a check run whose conclusion the caller derives from the
- * policy verdict (and, under double opt-in, the AI reviewer).
+ * Posts the rendered markdown as the single in-place PR comment (D5) and a
+ * check run when requested — or whenever there are diff annotations to
+ * publish (annotations only travel via the checks API).
  */
 export async function postCoverageReport({
   token,
@@ -15,6 +16,7 @@ export async function postCoverageReport({
   markdown,
   useCheckRun = false,
   conclusion = 'success',
+  annotations = [],
 }: {
   token: string;
   owner: string;
@@ -23,6 +25,7 @@ export async function postCoverageReport({
   markdown: string;
   useCheckRun?: boolean;
   conclusion?: 'success' | 'failure' | 'neutral';
+  annotations?: Annotation[];
 }): Promise<void> {
   const octokit = getOctokit(token);
 
@@ -34,13 +37,14 @@ export async function postCoverageReport({
     body: markdown,
   });
 
-  if (useCheckRun) {
+  if (useCheckRun || annotations.length > 0) {
     try {
       await postCoverageCheckRun({
         token,
         title: 'Coverage Report',
         summary: markdown,
         conclusion,
+        annotations,
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);

@@ -8,7 +8,8 @@ const octokit = {
       updateComment: vi.fn(),
     },
     checks: {
-      create: vi.fn(),
+      create: vi.fn().mockResolvedValue({ data: { id: 9 } }),
+      update: vi.fn(),
     },
   },
 };
@@ -35,7 +36,18 @@ const baseArgs = {
 beforeEach(() => {
   vi.clearAllMocks();
   octokit.rest.issues.listComments.mockResolvedValue({ data: [] });
+  octokit.rest.checks.create.mockResolvedValue({ data: { id: 9 } });
 });
+
+function annotation(i: number) {
+  return {
+    path: `src/f${i}.ts`,
+    start_line: 1,
+    end_line: 1,
+    annotation_level: 'warning' as const,
+    message: 'not covered',
+  };
+}
 
 describe('upsertCoverageComment (D5: one comment, updated in place)', () => {
   it('creates the comment when none exists', async () => {
@@ -103,6 +115,28 @@ describe('postCoverageReport', () => {
         expect.objectContaining({ conclusion, head_sha: 'head-sha' })
       );
     }
+  });
+
+  it('annotations force a check run even without use-check-run', async () => {
+    await postCoverageReport({ ...baseArgs, markdown: 'r', annotations: [annotation(1)] });
+
+    expect(octokit.rest.checks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        output: expect.objectContaining({ annotations: [annotation(1)] }),
+      })
+    );
+    expect(octokit.rest.checks.update).not.toHaveBeenCalled();
+  });
+
+  it('publishes >50 annotations in chunks via checks.update', async () => {
+    const annotations = Array.from({ length: 120 }, (_, i) => annotation(i));
+    await postCoverageReport({ ...baseArgs, markdown: 'r', useCheckRun: true, annotations });
+
+    const created = octokit.rest.checks.create.mock.calls[0][0];
+    expect(created.output.annotations).toHaveLength(50);
+    expect(octokit.rest.checks.update).toHaveBeenCalledTimes(2);
+    expect(octokit.rest.checks.update.mock.calls[0][0]).toMatchObject({ check_run_id: 9 });
+    expect(octokit.rest.checks.update.mock.calls[1][0].output.annotations).toHaveLength(20);
   });
 
   it('falls back to comment-only when the check run fails', async () => {
