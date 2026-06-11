@@ -7,10 +7,12 @@ exports[`renderMarkdown states > invalid-data: input, problem and fix 1`] = `
 
 _PR #42_
 
-### What went wrong
+### ⚙️ What went wrong
 
-- **head** — corrupt JSON
-  - fix: check the artifact path
+> [!WARNING]
+> **\`head\`** — corrupt JSON
+>
+> 🛠️ **Fix:** check the artifact path
 
 ---
 
@@ -123,7 +125,7 @@ _PR #42_
 
 </details>
 
-<details>
+<details open>
 <summary>✏️ Changed files (1 of 1)</summary>
 
 | St. | File | Statements | Branches | Functions | Lines | Uncovered |
@@ -191,7 +193,7 @@ _Files where this PR reduced coverage. Ratchet policy treats these as violations
 
 </details>
 
-<details>
+<details open>
 <summary>✏️ Changed files (1 of 1)</summary>
 
 | St. | File | Statements | Branches | Functions | Lines | Uncovered |
@@ -233,16 +235,21 @@ _PR #42_
 > [!CAUTION]
 > **1 test of 5 failed** — the check is marked \`failure\`, so the PR cannot merge until the test run passes.
 
+| ❌ Failed | 🧪 Total |
+| :-: | :-: |
+| **1** | **5** |
+
 ### ❌ Failed tests
 
 <details open>
-<summary><code>src/a.test.ts</code> — 1 failed test</summary>
+<summary>🔴 <code>src/a.test.ts</code> — 1 failed test</summary>
 
-- ❌ boom
+- ❌ **boom**
 
 </details>
 
-_Coverage from this PR's test run (gate deferred until tests pass):_
+> [!NOTE]
+> Coverage below is from this PR's failed run and may be partial — the coverage gate is deferred until tests pass.
 
 | St. | Category | Percentage | Covered / Total |
 | :-: | --- | --- | ---: |
@@ -303,7 +310,7 @@ _PR #42_
 
 </details>
 
-<details>
+<details open>
 <summary>✏️ Changed files (1 of 1)</summary>
 
 | St. | File | Statements | Branches | Functions | Lines | Uncovered |
@@ -361,7 +368,7 @@ _PR #42_
 
 </details>
 
-<details>
+<details open>
 <summary>✏️ Changed files (1 of 1)</summary>
 
 | St. | File | Statements | Branches | Functions | Lines | Uncovered |

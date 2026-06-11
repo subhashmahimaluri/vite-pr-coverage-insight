@@ -345,7 +345,10 @@ function changedFilesSection(
     ? `✏️ Files changed in this PR (${changed.length} of ${files.length})`
     : `✏️ Changed files (${changed.length} of ${files.length})`;
   const shown = rowLimit !== undefined ? changed.slice(0, rowLimit) : changed;
-  const lines = ['<details>', `<summary>${summary}</summary>`, '', ...fileTableHeader()];
+  // the changed-files table is what reviewers came for — visible by default
+  // for small sets, collapsed only when long (or when truncating)
+  const open = rowLimit === undefined && changed.length <= 15 ? ' open' : '';
+  const lines = [`<details${open}>`, `<summary>${summary}</summary>`, '', ...fileTableHeader()];
   for (const file of shown) lines.push(fileRow(report, file, withDeltas));
   if (shown.length < changed.length) {
     lines.push('', `_…${changed.length - shown.length} more changed files omitted._`);
@@ -474,6 +477,33 @@ function shortestPathSection(report: CoverageReport): string {
 const EXCERPT_MAX_LINES = 10;
 const TESTS_PER_SUITE = 5;
 
+/** run-at-a-glance cards for the failure state: failed / passed / skipped / suites */
+function testStatsRow(report: CoverageReport): string {
+  const t = report.testFailures;
+  if (!t) return '';
+  const passed = t.numPassedTests;
+  const skipped =
+    passed !== undefined ? Math.max(t.numTotalTests - passed - t.numFailedTests, 0) : undefined;
+  const suites =
+    t.numTotalSuites !== undefined
+      ? t.numFailedSuites !== undefined
+        ? `**${t.numFailedSuites} of ${t.numTotalSuites}** failed`
+        : `**${t.numTotalSuites}**`
+      : undefined;
+
+  const cells: [string, string][] = [['❌ Failed', `**${t.numFailedTests}**`]];
+  if (passed !== undefined) cells.push(['✅ Passed', `**${passed}**`]);
+  if (skipped !== undefined) cells.push(['⏭️ Skipped', `**${skipped}**`]);
+  cells.push(['🧪 Total', `**${t.numTotalTests}**`]);
+  if (suites !== undefined) cells.push(['📦 Suites', suites]);
+
+  return [
+    `| ${cells.map(([label]) => label).join(' | ')} |`,
+    `| ${cells.map(() => ':-:').join(' | ')} |`,
+    `| ${cells.map(([, value]) => value).join(' | ')} |`,
+  ].join('\n');
+}
+
 function failedTestsSection(report: CoverageReport): string {
   const failures = report.testFailures;
   if (!failures || failures.numFailedTests === 0) return '';
@@ -489,13 +519,15 @@ function failedTestsSection(report: CoverageReport): string {
 
   let first = true;
   for (const [filePath, tests] of bySuite) {
+    const url = blobUrl(report, filePath);
+    const suiteLabel = url ? `<a href="${url}"><code>${filePath}</code></a>` : `<code>${filePath}</code>`;
     lines.push(
       `<details${first ? ' open' : ''}>`,
-      `<summary><code>${filePath}</code> — ${plural(tests.length, 'failed test')}</summary>`,
+      `<summary>🔴 ${suiteLabel} — ${plural(tests.length, 'failed test')}</summary>`,
       ''
     );
     for (const test of tests.slice(0, TESTS_PER_SUITE)) {
-      lines.push(`- ❌ ${test.testName}`);
+      lines.push(`- ❌ **${test.testName}**`);
       if (test.message) {
         const excerpt = test.message.split('\n').slice(0, EXCERPT_MAX_LINES).join('\n');
         lines.push('', '  ```', ...excerpt.split('\n').map((l) => `  ${l}`), '  ```', '');
@@ -591,12 +623,16 @@ function regressionsSection(report: CoverageReport): string {
 function errorsSection(report: CoverageReport): string {
   const errors = report.errors ?? [];
   if (errors.length === 0) return '';
-  const lines = ['### What went wrong', ''];
+  const lines = ['### ⚙️ What went wrong', ''];
   for (const error of errors) {
-    lines.push(`- **${error.input}** — ${error.message}`);
-    if (error.hint) lines.push(`  - fix: ${error.hint}`);
+    lines.push(
+      '> [!WARNING]',
+      `> **\`${error.input}\`** — ${error.message}`,
+      ...(error.hint ? ['>', `> 🛠️ **Fix:** ${error.hint}`] : []),
+      ''
+    );
   }
-  return lines.join('\n');
+  return lines.join('\n').trimEnd();
 }
 
 const PROJECT_STATE_BADGES: Partial<Record<ReportState, string>> = {
@@ -781,6 +817,7 @@ function sectionsFor(report: CoverageReport, opts: RenderMarkdownOptions): Secti
 
     case 'tests-failed': {
       push(testsFailedAlert(report), { protected: true });
+      push(testStatsRow(report), { protected: true });
       push(failedTestsSection(report), { protected: true });
       push(errorsSection(report), { protected: true });
       // only this PR's own numbers — no base-branch band, no trend; with the
@@ -788,7 +825,9 @@ function sectionsFor(report: CoverageReport, opts: RenderMarkdownOptions): Secti
       // totals would be noise, so they are skipped entirely
       const headBroken = (report.errors ?? []).length > 0;
       if (!headBroken) {
-        push("_Coverage from this PR's test run (gate deferred until tests pass):_");
+        push(
+          "> [!NOTE]\n> Coverage below is from this PR's failed run and may be partial — the coverage gate is deferred until tests pass."
+        );
         push(totalsSection(report, false), { protected: true });
         push(changedFilesSection(report, false), {
           changedFiles: { files, withDeltas: false },

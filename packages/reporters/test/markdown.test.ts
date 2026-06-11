@@ -59,7 +59,7 @@ describe('renderMarkdown states', () => {
     // base-branch visuals are hidden: only this PR's own numbers
     expect(md).not.toContain('<picture>');
     expect(md).not.toContain('mermaid');
-    expect(md).toContain("Coverage from this PR's test run");
+    expect(md).toContain("Coverage below is from this PR's failed run");
     expect(md).toMatchSnapshot();
   });
 
@@ -84,7 +84,7 @@ describe('renderMarkdown states', () => {
     expect(md).toContain('🛑 Tests failed');
     expect(md).toContain('boom');
     expect(md).toContain('ENOENT');
-    expect(md).not.toContain("Coverage from this PR's test run");
+    expect(md).not.toContain("Coverage below is from this PR's failed run");
   });
 
   it('regression: severity badges', () => {
