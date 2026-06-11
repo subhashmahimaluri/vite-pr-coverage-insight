@@ -1,5 +1,6 @@
 import * as cache from '@actions/cache';
-import { getInput, setFailed } from '@actions/core';
+import { getInput, info, setFailed, warning } from '@actions/core';
+import { execSync } from 'child_process';
 import { context, getOctokit } from '@actions/github';
 import fs from 'fs';
 import path from 'path';
@@ -64,6 +65,9 @@ async function run() {
 }
 
 async function runBaselineMode(): Promise<void> {
+  const script = getInput('run-script');
+  if (script) runScript(script);
+
   const githubToken = getInput('github-token', { required: true });
   const coveragePath = getInput('coverage') || getInput('head', { required: true });
   const branch = getInput('baseline-branch') || DEFAULT_BASELINE_BRANCH;
@@ -93,6 +97,9 @@ async function runBaselineMode(): Promise<void> {
 }
 
 async function runReportMode(): Promise<void> {
+  const script = getInput('run-script');
+  if (script) runScript(script);
+
   const githubToken = getInput('github-token', { required: true });
   const basePath = getInput('base');
   const headPath = getInput('head', { required: true });
@@ -361,6 +368,20 @@ async function restoreBaselineFromCache(sha: string): Promise<string | null> {
   } catch (error) {
     console.warn(`⚠️ Baseline cache restore skipped: ${error}`);
     return null;
+  }
+}
+
+/** Run an arbitrary shell command, streaming its output to the action log. Returns the exit code. */
+function runScript(script: string): number {
+  const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
+  info(`▶ Running: ${script}`);
+  try {
+    execSync(script, { stdio: 'inherit', cwd: workspace });
+    return 0;
+  } catch (error: unknown) {
+    const code = (error as NodeJS.ErrnoException & { status?: number }).status ?? 1;
+    warning(`run-script exited with code ${code} — posting coverage report anyway`);
+    return code;
   }
 }
 

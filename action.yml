@@ -29,6 +29,9 @@ inputs:
     required: false
     description: "Only with ai: 'review' — allow a high-risk AI verdict to set the check run to neutral"
     default: 'false'
+  run-script:
+    required: false
+    description: 'Shell command to run tests with coverage before reading the coverage file (e.g. npm run test:coverage). Output is streamed to the action log; the action continues even if the script exits non-zero so the report still posts.'
   test-failures:
     required: false
     description: 'Path to test failures JSON file'
