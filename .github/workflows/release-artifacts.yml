@@ -1,0 +1,40 @@
+# Supply-chain hardening (Stage 6.2): provenance attestation + SBOM for every
+# published release.
+name: Release artifacts
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write # attach SBOM to the release
+  id-token: write # sigstore provenance
+  attestations: write
+
+jobs:
+  attest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Attest build provenance for the action bundle
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/index.js
+
+      - name: Generate CycloneDX SBOM
+        run: npx --yes @cyclonedx/cyclonedx-npm --omit dev --output-file sbom.cdx.json
+
+      - name: Attach SBOM to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" sbom.cdx.json --clobber

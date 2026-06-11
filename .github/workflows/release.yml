@@ -9,6 +9,7 @@ concurrency: release-${{ github.ref }}
 permissions:
   contents: write
   pull-requests: write
+  id-token: write # npm provenance
 
 jobs:
   release:
@@ -28,11 +29,17 @@ jobs:
 
       - run: npm run build
 
-      - name: Create or update the Version Packages PR
+      - name: Create or update the Version Packages PR / publish
         uses: changesets/action@v1
         with:
           version: npx changeset version
+          # publishes with sigstore provenance when NPM_TOKEN is configured;
+          # without the secret this is a no-op and only the Version PR is managed
+          publish: npx changeset publish
+          createGithubReleases: true
           title: 'chore: version packages'
           commit: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'

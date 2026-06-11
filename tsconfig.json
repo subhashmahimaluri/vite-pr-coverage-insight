@@ -1,4 +1,11 @@
 {
   "files": [],
-  "references": [{ "path": "packages/core" }, { "path": "packages/action" }]
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/reporters" },
+    { "path": "packages/history" },
+    { "path": "packages/agents" },
+    { "path": "packages/cli" },
+    { "path": "packages/action" }
+  ]
 }

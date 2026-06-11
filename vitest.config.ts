@@ -5,6 +5,12 @@ export default defineConfig({
     alias: {
       // tests run against workspace sources, not built dist
       '@coverage-insight/core': new URL('./packages/core/src/index.ts', import.meta.url).pathname,
+      '@coverage-insight/reporters': new URL('./packages/reporters/src/index.ts', import.meta.url)
+        .pathname,
+      '@coverage-insight/history': new URL('./packages/history/src/index.ts', import.meta.url)
+        .pathname,
+      '@coverage-insight/agents': new URL('./packages/agents/src/index.ts', import.meta.url)
+        .pathname,
     },
   },
   test: {

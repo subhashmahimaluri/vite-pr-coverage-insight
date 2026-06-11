@@ -170,6 +170,31 @@ The action will post a comment to the PR with:
 
 The comment is updated on subsequent pushes instead of stacking.
 
+## Security
+
+Pin the action by **commit SHA**, not a tag — tags can move, SHAs cannot:
+
+```yaml
+- uses: subhashmahimaluri/vite-pr-coverage-insight@<full-40-char-sha> # v2.x.y
+```
+
+Let Dependabot keep the pin fresh:
+
+```yaml
+# .github/dependabot.yml
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+```
+
+Releases ship with build provenance attestations
+(`gh attestation verify dist/index.js --repo subhashmahimaluri/vite-pr-coverage-insight`)
+and a CycloneDX SBOM attached to each GitHub release. npm packages publish
+with `--provenance`.
+
 ## License
 
 MIT

@@ -1,0 +1,29 @@
+{
+  "name": "@coverage-insight/cli",
+  "version": "1.0.0",
+  "description": "covins — coverage compare/check/report CLI for GitLab, Jenkins, Azure and local use",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "covins": "dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@coverage-insight/core": "1.0.0",
+    "@coverage-insight/reporters": "1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/subhashmahimaluri/vite-pr-coverage-insight.git",
+    "directory": "packages/cli"
+  }
+}
