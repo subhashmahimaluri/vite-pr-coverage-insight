@@ -126,6 +126,18 @@ function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
+const SPARK_BLOCKS = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+
+function sparkline(values: number[]): string {
+  if (values.length < 2) return '';
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min;
+  return values
+    .map((v) => SPARK_BLOCKS[span === 0 ? 3 : Math.round(((v - min) / span) * 7)])
+    .join('');
+}
+
 /** required thresholds known from policy violations and/or policyMeta */
 function requiredByMetric(report: CoverageReport): Partial<Record<MetricKey, number>> {
   const required: Partial<Record<MetricKey, number>> = { ...report.policyMeta?.thresholds };
@@ -654,6 +666,46 @@ type Section = {
   changedFiles?: { files: FileReport[]; withDeltas: boolean };
 };
 
+/**
+ * Inline metric cards built from the report itself — always the CURRENT PR's
+ * values (never the base branch). Used whenever the live per-PR SVG band is
+ * unavailable (no contents: write, forks, private repos, text mode).
+ */
+function metricCardsTable(report: CoverageReport): string {
+  const totals = report.totals;
+  if (!totals) return '';
+  const required = requiredByMetric(report);
+
+  const valueCells: string[] = [];
+  const countCells: string[] = [];
+  const sparkCells: string[] = [];
+  for (const key of METRIC_KEYS) {
+    const m = totals[key];
+    const delta = m.delta !== null ? ` ${fmtDeltaRich(m.delta)}` : '';
+    valueCells.push(`${statusIcon(m.head, required[key])} **${fmtPct(m.head)}**${delta}`);
+    countCells.push(
+      m.covered !== undefined && m.total !== undefined
+        ? `<sub>${m.covered}/${m.total} covered</sub>`
+        : ''
+    );
+    const series = (report.history ?? [])
+      .map((point) => (key === 'lines' ? point.lines : point[key]))
+      .filter((v): v is number => typeof v === 'number')
+      .slice(-12);
+    series.push(m.head);
+    sparkCells.push(series.length >= 2 ? `<sub>${sparkline(series)}</sub>` : '');
+  }
+
+  const lines = [
+    `| ${METRIC_KEYS.map((key) => METRIC_LABELS[key]).join(' | ')} |`,
+    `| ${METRIC_KEYS.map(() => ':-:').join(' | ')} |`,
+    `| ${valueCells.join(' | ')} |`,
+  ];
+  if (countCells.some(Boolean)) lines.push(`| ${countCells.join(' | ')} |`);
+  if (sparkCells.some(Boolean)) lines.push(`| ${sparkCells.join(' | ')} |`);
+  return lines.join('\n');
+}
+
 function metricBandSection(opts: RenderMarkdownOptions): string {
   if (opts.visuals !== 'images' || !opts.badgeImages) return '';
   const lines = [
@@ -666,21 +718,20 @@ function metricBandSection(opts: RenderMarkdownOptions): string {
   return lines.join('\n');
 }
 
-function sectionsFor(
-  report: CoverageReport,
-  withDeltas: boolean,
-  opts: RenderMarkdownOptions
-): Section[] {
+function sectionsFor(report: CoverageReport, opts: RenderMarkdownOptions): Section[] {
   const files = report.files ?? [];
   const sections: Section[] = [];
   const push = (text: string, flags: Omit<Section, 'text'> = {}) => {
     if (text) sections.push({ text, ...flags });
   };
 
-  // base-branch history cards mislead in failure/error states — only the
-  // current PR's own numbers are shown there
+  // headline graphs are ALWAYS the current PR: the SVG band when the caller
+  // published a live per-PR one, otherwise inline markdown cards built from
+  // this report. Failure/error states show no graphs at all.
   const bandStates: ReportState[] = ['passed', 'no-change', 'threshold-failed', 'regression'];
-  const band = bandStates.includes(report.state) ? metricBandSection(opts) : '';
+  const band = bandStates.includes(report.state)
+    ? metricBandSection(opts) || metricCardsTable(report)
+    : '';
   // when the cards are shown they carry covered/total — drop the table column
   const showCounts = band === '';
 
@@ -782,8 +833,7 @@ export function renderMarkdown(report: CoverageReport, opts: RenderMarkdownOptio
       .join('\n\n');
   }
 
-  const withDeltas = report.baseline !== null || (report.totals?.lines.base ?? null) !== null;
-  let sections = sectionsFor(report, withDeltas, opts);
+  let sections = sectionsFor(report, opts);
   let output = assemble(COMMENT_MARKER, header, [
     ...sections.map((s) => s.text),
     footer(report, opts),

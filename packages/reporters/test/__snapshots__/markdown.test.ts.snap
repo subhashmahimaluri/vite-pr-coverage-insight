@@ -95,12 +95,33 @@ exports[`renderMarkdown states > passed: verdict first line after the D5 marker 
 
 _PR #42_
 
+| Statements | Branches | Functions | Lines |
+| :-: | :-: | :-: | :-: |
+| 🟢 **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 🟢 **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 🟢 **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 🟢 **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) |
+| <sub>9/10 covered</sub> | <sub>9/10 covered</sub> | <sub>9/10 covered</sub> | <sub>9/10 covered</sub> |
+
+<details>
+<summary>📊 Coverage report — this PR vs base branch</summary>
+
+**Current PR**
+
 | St. | Category | Percentage | Covered / Total |
 | :-: | --- | --- | ---: |
 | 🟢 | Statements | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
 | 🟢 | Branches | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
 | 🟢 | Functions | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
 | 🟢 | Lines | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
+
+**Base branch**
+
+| St. | Category | Percentage |
+| :-: | --- | --- |
+| 🟢 | Statements | **80.0%** |
+| 🟢 | Branches | **80.0%** |
+| 🟢 | Functions | **80.0%** |
+| 🟢 | Lines | **80.0%** |
+
+</details>
 
 <details>
 <summary>✏️ Changed files (1 of 1)</summary>
@@ -132,6 +153,11 @@ exports[`renderMarkdown states > regression: severity badges 1`] = `
 
 _PR #42_
 
+| Statements | Branches | Functions | Lines |
+| :-: | :-: | :-: | :-: |
+| 🔴 **20.0%** ($\\color{red}{\\textsf{-60.00\\%}}$ ▼) | 🔴 **20.0%** ($\\color{red}{\\textsf{-60.00\\%}}$ ▼) | 🔴 **20.0%** ($\\color{red}{\\textsf{-60.00\\%}}$ ▼) | 🔴 **20.0%** ($\\color{red}{\\textsf{-60.00\\%}}$ ▼) |
+| <sub>2/10 covered</sub> | <sub>2/10 covered</sub> | <sub>2/10 covered</sub> | <sub>2/10 covered</sub> |
+
 ### 🔻 Coverage regressions — 1 file _(sorted by impact)_
 
 _Files where this PR reduced coverage. Ratchet policy treats these as violations even when the project threshold is still met._
@@ -142,12 +168,28 @@ _Files where this PR reduced coverage. Ratchet policy treats these as violations
 > [!IMPORTANT]
 > 🔴 critical: drop > 5pp or below a path threshold · 🟡 warning: any decrease
 
+<details>
+<summary>📊 Coverage report — this PR vs base branch</summary>
+
+**Current PR**
+
 | St. | Category | Percentage | Covered / Total |
 | :-: | --- | --- | ---: |
 | 🔴 | Statements | **20.0%** ($\\color{red}{\\textsf{-60.00\\%}}$ ▼) | 2/10 |
 | 🔴 | Branches | **20.0%** ($\\color{red}{\\textsf{-60.00\\%}}$ ▼) | 2/10 |
 | 🔴 | Functions | **20.0%** ($\\color{red}{\\textsf{-60.00\\%}}$ ▼) | 2/10 |
 | 🔴 | Lines | **20.0%** ($\\color{red}{\\textsf{-60.00\\%}}$ ▼) | 2/10 |
+
+**Base branch**
+
+| St. | Category | Percentage |
+| :-: | --- | --- |
+| 🟢 | Statements | **80.0%** |
+| 🟢 | Branches | **80.0%** |
+| 🟢 | Functions | **80.0%** |
+| 🟢 | Lines | **80.0%** |
+
+</details>
 
 <details>
 <summary>✏️ Changed files (1 of 1)</summary>
@@ -221,6 +263,11 @@ exports[`renderMarkdown states > threshold-failed: compliance table and shortest
 
 _PR #42_
 
+| Statements | Branches | Functions | Lines |
+| :-: | :-: | :-: | :-: |
+| 🟢 **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 🟢 **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 🟢 **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 🟢 **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) |
+| <sub>9/10 covered</sub> | <sub>9/10 covered</sub> | <sub>9/10 covered</sub> | <sub>9/10 covered</sub> |
+
 ### Threshold compliance
 
 | Metric | Required | PR | Gap | Status |
@@ -233,12 +280,28 @@ _PR #42_
 | --- | --- | --- |
 | \`src/a.ts\` | 1 uncovered line | closes the full 10.0pp lines gap |
 
+<details>
+<summary>📊 Coverage report — this PR vs base branch</summary>
+
+**Current PR**
+
 | St. | Category | Percentage | Covered / Total |
 | :-: | --- | --- | ---: |
 | 🟢 | Statements | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
 | 🟢 | Branches | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
 | 🟢 | Functions | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) | 9/10 |
 | 🟢 | Lines | **90.0%** ($\\color{green}{\\textsf{+10.00\\%}}$ ▲) — required 90% | 9/10 |
+
+**Base branch**
+
+| St. | Category | Percentage |
+| :-: | --- | --- |
+| 🟢 | Statements | **80.0%** |
+| 🟢 | Branches | **80.0%** |
+| 🟢 | Functions | **80.0%** |
+| 🟢 | Lines | **80.0%** |
+
+</details>
 
 <details>
 <summary>✏️ Changed files (1 of 1)</summary>

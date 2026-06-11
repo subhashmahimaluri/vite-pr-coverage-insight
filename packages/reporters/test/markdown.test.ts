@@ -269,6 +269,26 @@ describe('visuals modes', () => {
     expect(md).toMatchSnapshot();
   });
 
+  it('no badge images: inline cards show the CURRENT PR values, never base', () => {
+    const md = renderMarkdown(
+      report({
+        history: [
+          { sha: 'a1', lines: 80 },
+          { sha: 'b2', lines: 85 },
+        ],
+      })
+      // no visuals/badgeImages — e.g. missing contents: write
+    );
+    expect(md).not.toContain('<picture>');
+    const cards = md.split('| Statements | Branches | Functions | Lines |')[1].split('\n\n')[0];
+    expect(cards).toContain('**90.0%**'); // head value, not the 80% base
+    expect(cards).toContain('▲'); // delta vs base
+    expect(cards).toContain('9/10 covered');
+    expect(cards).toContain('<sub>▁'); // sparkline row
+    // detailed tables still collapse behind the spoiler
+    expect(md).toContain('<summary>📊 Coverage report — this PR vs base branch</summary>');
+  });
+
   it('mermaid: chart but no picture (private-repo auto fallback)', () => {
     const md = renderMarkdown(
       report({

@@ -361,19 +361,14 @@ async function runReportMode(): Promise<void> {
       visuals = 'mermaid';
     }
   }
-  // metric-band cards. Preferred: a *live* per-PR band — the head run appended
-  // to the history series, so values/deltas/covered-totals are this PR's, not
-  // the base branch's. Needs `contents: write`; falls back to the static
-  // base-branch band (and a caption saying so) when the commit is not possible.
+  // metric-band cards: a *live* per-PR band — the head run appended to the
+  // history series, so values/deltas/covered-totals are this PR's, never the
+  // base branch's. Needs `contents: write`; when the commit is not possible
+  // no badgeImages are passed and the renderer draws inline current-PR cards.
   const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/${baselineBranch}`;
   let badgeImages: { light: string; dark: string } | undefined;
   let bandCaption: string | undefined;
   if (visuals === 'images' && historySeries.length > 0) {
-    badgeImages = {
-      light: `${rawBase}/${metricBandPath('light')}`,
-      dark: `${rawBase}/${metricBandPath('dark')}`,
-    };
-    bandCaption = `Base branch coverage — last ${Math.min(historySeries.length, 30)} baseline runs`;
     if (head) {
       try {
         const headPoint: HistoryPoint = {
@@ -414,7 +409,7 @@ async function runReportMode(): Promise<void> {
         bandCaption = 'This PR vs the base branch — delta against the latest baseline';
       } catch (error) {
         console.warn(
-          `⚠️ Live PR metric band skipped (grant \`contents: write\` to enable): ${error}`
+          `⚠️ Live PR metric band skipped (grant \`contents: write\` for SVG cards) — using inline cards: ${error}`
         );
       }
     }
