@@ -27,7 +27,7 @@ jobs:
       - run: npm run build
 
       - name: Attest build provenance for the action bundle
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: dist/index.js
 
