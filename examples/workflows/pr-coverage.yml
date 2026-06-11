@@ -1,0 +1,50 @@
+# Single-test-run PR coverage (Stage 2.2/2.3): tests HEAD only, the action
+# auto-resolves the baseline. Copy into .github/workflows/ and adjust the test
+# command.
+name: PR coverage
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-coverage-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run tests with coverage (HEAD only)
+        run: npm test -- --coverage
+        continue-on-error: true
+
+      - uses: subhashmahimaluri/vite-pr-coverage-insight@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          head: coverage/coverage-summary.json
+          # no `base:` — resolved from the baseline store automatically
+
+      # the action writes coverage-report.json (versioned schema) and a
+      # self-contained coverage-report.html on every run, including errors
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            coverage-report.json
+            coverage-report.html
+          if-no-files-found: warn

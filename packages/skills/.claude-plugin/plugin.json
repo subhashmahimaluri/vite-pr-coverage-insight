@@ -1,0 +1,9 @@
+{
+  "name": "coverage-insight",
+  "version": "1.0.0",
+  "description": "Coverage Insight skills: review PR coverage, write missing tests, summarize coverage trends — all from the schemaVersion'd coverage-report.json artifact",
+  "author": {
+    "name": "Coverage Insight contributors",
+    "url": "https://github.com/subhashmahimaluri/vite-pr-coverage-insight"
+  }
+}

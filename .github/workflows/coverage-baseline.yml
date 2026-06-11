@@ -1,0 +1,35 @@
+# Dogfood: publish this repo's own coverage baseline on every push to main
+# (Stage 2.1 acceptance — single-run pipeline for our own PRs).
+name: Coverage baseline
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coverage-baseline
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run test:coverage
+
+      - uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          mode: baseline
+          coverage: coverage/coverage-summary.json

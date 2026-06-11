@@ -4,12 +4,31 @@ inputs:
   github-token:
     required: true
     description: 'GitHub token for PR comment'
+  mode:
+    required: false
+    description: "'report' (default) posts the PR comment; 'baseline' publishes coverage to the baseline store on main-branch pushes"
+    default: 'report'
   base:
-    required: true
-    description: 'Path to base coverage-summary.json'
+    required: false
+    description: 'Path to base coverage-summary.json (optional since v2 — omit to auto-resolve from the baseline store)'
   head:
-    required: true
-    description: 'Path to PR coverage-summary.json'
+    required: false
+    description: 'Path to PR coverage-summary.json, or a directory of shard summaries to merge'
+  coverage:
+    required: false
+    description: "Path to coverage-summary.json for 'baseline' mode (falls back to 'head')"
+  baseline-branch:
+    required: false
+    description: 'Orphan branch used as the baseline/history store'
+    default: 'coverage-baseline'
+  ai:
+    required: false
+    description: "AI assistance: 'off' (default, zero non-GitHub network calls), 'comment' (risk analysis + test suggestions), 'review' (adds advisory verdict)"
+    default: 'off'
+  ai-can-block:
+    required: false
+    description: "Only with ai: 'review' — allow a high-risk AI verdict to set the check run to neutral"
+    default: 'false'
   test-failures:
     required: false
     description: 'Path to test failures JSON file'

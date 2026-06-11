@@ -1,0 +1,25 @@
+{
+  "name": "@coverage-insight/history",
+  "version": "1.0.0",
+  "description": "Coverage trend history from the baseline branch: time series, SVG sparklines, delta badges, shields.io endpoints",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@coverage-insight/core": "1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/subhashmahimaluri/vite-pr-coverage-insight.git",
+    "directory": "packages/history"
+  }
+}

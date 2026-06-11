@@ -1,0 +1,26 @@
+{
+  "name": "@coverage-insight/agents",
+  "version": "1.0.0",
+  "description": "Optional AI layer (decision D2): provider runtime with guards plus coverage-analyst, test-suggester and pr-risk-reviewer agents",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@coverage-insight/core": "1.0.0",
+    "zod": "^4.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/subhashmahimaluri/vite-pr-coverage-insight.git",
+    "directory": "packages/agents"
+  }
+}
