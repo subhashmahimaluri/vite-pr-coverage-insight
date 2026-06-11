@@ -4,11 +4,11 @@ Three skills that work entirely off the versioned artifacts the action
 produces (`coverage-report.json`, the `coverage-baseline` branch — decision
 D6; no raw coverage parsing):
 
-| Skill                 | What it does                                                              |
-| --------------------- | ------------------------------------------------------------------------- |
-| `coverage-review`     | Verdict, gate failures, regressions and risky uncovered code for a PR     |
-| `write-missing-tests` | Writes and runs real tests for the uncovered ranges in the report         |
-| `coverage-trends`     | Trend summary with sparklines from the coverage-baseline history branch   |
+| Skill                 | What it does                                                            |
+| --------------------- | ----------------------------------------------------------------------- |
+| `coverage-review`     | Verdict, gate failures, regressions and risky uncovered code for a PR   |
+| `write-missing-tests` | Writes and runs real tests for the uncovered ranges in the report       |
+| `coverage-trends`     | Trend summary with sparklines from the coverage-baseline history branch |
 
 ## Install
 

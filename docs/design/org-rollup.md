@@ -33,7 +33,7 @@ repo-c  coverage-baseline ──┘        │ reads baselines/<sha>.json via AP
   test runs, no checkouts — pure API reads (~3 requests/repo).
 - **Aggregate artifact**: `org-coverage.json` with `schemaVersion: 1`,
   `[{repo, defaultBranch, latest: {metrics, sha, timestamp}, series:
-  HistoryPoint[], policy?: latest verdict}]`. Same D6 philosophy: the
+HistoryPoint[], policy?: latest verdict}]`. Same D6 philosophy: the
   dashboard and any future agent consume only this.
 - **Dashboard**: one self-contained HTML file (reuse `packages/history`
   sparklines + `packages/reporters/html` table/treemap components): org
