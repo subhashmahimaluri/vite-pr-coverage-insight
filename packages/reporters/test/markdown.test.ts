@@ -285,6 +285,26 @@ describe('visuals modes', () => {
     expect(md).not.toContain('📊 Coverage report — this PR vs base branch');
   });
 
+  it('images without badgeImages: PR-true shields cards, never base values', () => {
+    const md = renderMarkdown(
+      report({
+        history: [
+          { sha: 'a1', lines: 80 },
+          { sha: 'b2', lines: 85 },
+        ],
+      }),
+      { visuals: 'images' } // no badgeImages — e.g. missing contents: write
+    );
+    expect(md).not.toContain('<picture>');
+    expect(md).toContain('img.shields.io/badge/Statements-');
+    expect(md).toContain(encodeURIComponent('90.0%')); // head value, not 80% base
+    expect(md).toContain(encodeURIComponent('▲')); // delta vs base in the badge
+    expect(md).toContain('brightgreen');
+    expect(md).toContain('grant `contents: write`');
+    // detailed tables still collapse behind the spoiler
+    expect(md).toContain('<summary>📊 Coverage report — this PR vs base branch</summary>');
+  });
+
   it('mermaid: chart but no picture (private-repo auto fallback)', () => {
     const md = renderMarkdown(
       report({

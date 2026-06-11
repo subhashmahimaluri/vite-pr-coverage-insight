@@ -700,6 +700,36 @@ type Section = {
   changedFiles?: { files: FileReport[]; withDeltas: boolean };
 };
 
+/**
+ * PR-true badge cards rendered by shields.io straight from the URL — no file
+ * has to be committed anywhere, so this works without `contents: write`.
+ * Used in images mode when no live per-PR band SVG could be published.
+ * Public repos only (the `images` visuals mode already guarantees that).
+ */
+function shieldsCardsSection(report: CoverageReport): string {
+  const totals = report.totals;
+  if (!totals) return '';
+  const cards = METRIC_KEYS.map((key) => {
+    const m = totals[key];
+    const color = m.head >= 80 ? 'brightgreen' : m.head >= 60 ? 'yellow' : 'red';
+    // U+2212 minus (not ASCII '-') so shields doesn't treat it as a separator
+    const delta =
+      m.delta === null
+        ? ''
+        : m.delta === 0
+          ? ' (±0.0)'
+          : ` (${m.delta > 0 ? '+' : '−'}${Math.abs(m.delta).toFixed(2)} ${m.delta > 0 ? '▲' : '▼'})`;
+    const message = encodeURIComponent(`${m.head.toFixed(1)}%${delta}`);
+    const label = encodeURIComponent(METRIC_LABELS[key]);
+    return `![${METRIC_LABELS[key]}](https://img.shields.io/badge/${label}-${message}-${color}?style=for-the-badge)`;
+  });
+  return [
+    cards.join(' '),
+    '',
+    '<sub>This PR’s coverage · grant `contents: write` in the workflow for trend cards with sparklines</sub>',
+  ].join('\n');
+}
+
 function metricBandSection(opts: RenderMarkdownOptions): string {
   if (opts.visuals !== 'images' || !opts.badgeImages) return '';
   const lines = [
@@ -719,11 +749,13 @@ function sectionsFor(report: CoverageReport, opts: RenderMarkdownOptions): Secti
     if (text) sections.push({ text, ...flags });
   };
 
-  // headline graphs: the SVG band cards (live per-PR when the caller could
-  // publish one, base-branch band with caption otherwise). Failure/error
-  // states show no graphs at all.
+  // headline graphs — ALWAYS this PR's data: the live per-PR SVG band when
+  // the caller published one, otherwise shields.io badge cards built from
+  // the report itself. Failure/error states show no graphs at all.
   const bandStates: ReportState[] = ['passed', 'no-change', 'threshold-failed', 'regression'];
-  const band = bandStates.includes(report.state) ? metricBandSection(opts) : '';
+  const band = bandStates.includes(report.state)
+    ? metricBandSection(opts) || (opts.visuals === 'images' ? shieldsCardsSection(report) : '')
+    : '';
   // when the cards are shown they carry covered/total — drop the table column
   const showCounts = band === '';
 

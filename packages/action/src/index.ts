@@ -386,23 +386,15 @@ async function runReportMode(): Promise<void> {
       visuals = 'mermaid';
     }
   }
-  // metric-band cards. Preferred: a *live* per-PR band — the head run appended
-  // to the history series, so values/deltas/covered-totals are this PR's.
-  // Needs `contents: write`; otherwise the base-branch band is shown with a
-  // caption saying what it is.
+  // metric-band cards: a *live* per-PR band — the head run appended to the
+  // history series, so values/deltas/covered-totals are this PR's. Needs
+  // `contents: write`; when the commit is not possible NO badgeImages are
+  // passed and the renderer shows PR-true shields.io badge cards instead —
+  // the base-branch band is never the headline.
   const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/${baselineBranch}`;
   let badgeImages: { light: string; dark: string } | undefined;
   let bandCaption: string | undefined;
   if (visuals === 'images' && historySeries.length > 0) {
-    badgeImages = {
-      light: `${rawBase}/${metricBandPath('light')}`,
-      dark: `${rawBase}/${metricBandPath('dark')}`,
-    };
-    // overwritten below when the live per-PR band commits; the hint stays
-    // otherwise so the missing permission is visible in the comment itself
-    bandCaption =
-      `Base branch coverage — last ${Math.min(historySeries.length, 30)} baseline runs · ` +
-      'add `contents: write` to this workflow to show **this PR’s** coverage here';
     if (head) {
       try {
         const headPoint: HistoryPoint = {
@@ -443,7 +435,7 @@ async function runReportMode(): Promise<void> {
         bandCaption = 'This PR vs the base branch — delta against the latest baseline';
       } catch (error) {
         console.warn(
-          `⚠️ Live PR metric band skipped (grant \`contents: write\` for per-PR values) — showing the base-branch band: ${error}`
+          `⚠️ Live PR metric band skipped (grant \`contents: write\` for sparkline cards) — showing shields.io badge cards: ${error}`
         );
       }
     }
