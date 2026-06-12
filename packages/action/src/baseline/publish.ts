@@ -33,6 +33,8 @@ export async function publishBaseline(params: {
   branch?: string;
   maxEntries?: number;
   timestamp?: string;
+  /** 🧬 mutation score to record with the entry (drives the band's Δ on PRs) */
+  mutationScore?: number;
   /** additional files committed alongside the entry (e.g. badges/*.svg) */
   extraFiles?: { path: string; content: string }[];
 }): Promise<PublishResult> {
@@ -78,7 +80,13 @@ export async function publishBaseline(params: {
   const keptShas = new Set(kept.map((e) => e.sha));
   const pruned = index.entries.filter((e) => !keptShas.has(e.sha)).map((e) => e.sha);
 
-  const entry: BaselineEntry = { sha, ref, timestamp, summary };
+  const entry: BaselineEntry = {
+    sha,
+    ref,
+    timestamp,
+    summary,
+    ...(params.mutationScore !== undefined ? { mutationScore: params.mutationScore } : {}),
+  };
 
   const tree: Parameters<BaselineOctokit['rest']['git']['createTree']>[0]['tree'] = [
     {

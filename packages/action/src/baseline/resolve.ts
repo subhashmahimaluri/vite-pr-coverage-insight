@@ -11,6 +11,8 @@ import {
 export type ResolvedBaseline = {
   summary: CoverageSummary;
   meta: BaselineMeta;
+  /** 🧬 mutation score recorded with the baseline entry, when present */
+  mutationScore?: number;
 };
 
 /** Restore hook so tests (and the action) can plug in @actions/cache. Returns the file content or null. */
@@ -63,6 +65,7 @@ export async function resolveBaseline(params: {
         const entry = JSON.parse(cached) as BaselineEntry;
         return {
           summary: entry.summary,
+          ...(entry.mutationScore !== undefined ? { mutationScore: entry.mutationScore } : {}),
           meta: {
             sha: mergeBaseSha,
             ref: entry.ref,
@@ -82,6 +85,7 @@ export async function resolveBaseline(params: {
   if (exact) {
     return {
       summary: exact.summary,
+      ...(exact.mutationScore !== undefined ? { mutationScore: exact.mutationScore } : {}),
       meta: {
         sha: mergeBaseSha,
         ref: exact.ref,
@@ -126,6 +130,7 @@ export async function resolveBaseline(params: {
       if (entry) {
         return {
           summary: entry.summary,
+          ...(entry.mutationScore !== undefined ? { mutationScore: entry.mutationScore } : {}),
           meta: {
             sha,
             ref: entry.ref,

@@ -180,6 +180,7 @@ live in [examples/workflows/](examples/workflows/).
 | `baseline-mode`   | `auto` \| `branch` \| `scan` (dual-run — test the merge-base in this job, needs `fetch-depth: 0`) \| `off`        | No       | `auto`                 |
 | `base-run-script` | Command for the merge-base worktree in dual-run mode (include installs, e.g. `npm ci && npm run test:coverage`)   | No       | `run-script`           |
 | `fix-plan-file`   | Markdown coverage fix plan with paste-ready AI test prompts                                                       | No       | `coverage-fix-plan.md` |
+| `mutation`        | Path to a Stryker mutation report (json reporter) — adds the 🧬 card, surviving-mutant list and kill prompts      | No       | -                      |
 | `upload-artifact` | Upload JSON + HTML + fix plan as a run artifact, 📥-linked from the comment                                       | No       | `true`                 |
 
 \* required in `report` mode. Explicit `base:` works exactly as in v1 and
@@ -272,6 +273,37 @@ _🤖 Cover with AI_ block with prompts for up to 5 changed files.
 AI guidance into `.github/copilot-instructions.md` (idempotent,
 marker-delimited), so assistants ship tests alongside the code they write
 instead of failing the gate afterwards.
+
+## 🧬 Mutation score (test strength)
+
+Coverage says your code **ran** under tests; the mutation score says the tests
+would **notice a bug** — a surviving mutant is a seeded bug (`>=` → `>`,
+`&&` → `||`) the whole suite missed. Run [Stryker](https://stryker-mutator.io)
+with its `json` reporter and hand the report to the action:
+
+```yaml
+- run: npx stryker run --reporters json --incremental # fast on PRs
+- uses: subhashmahimaluri/vite-pr-coverage-insight@v2
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    head: coverage/coverage-summary.json
+    mutation: reports/mutation/mutation.json
+```
+
+You get:
+
+- a **🧬 Mutation card** in the band (score colored by the 80/60 bands, Δ vs
+  the baseline's recorded score, surviving-mutant count for changed files)
+- a collapsed **"Surviving mutants in changed files"** table in the comment —
+  diff-aware like everything else: pre-existing weak tests are fix-plan
+  suggestions, never the headline
+- **kill prompts** in the fix plan: _"write a test that kills this mutant:
+  ConditionalExpression → `true` at src/changed.ts:9 — the suite currently
+  passes with the mutation applied"_ — a strictly better prompt than "cover
+  lines 8–12"
+
+Add the same `mutation:` input to the **baseline workflow** and the score is
+recorded per commit, which powers the Δ on PR runs.
 
 ## Trend history & badges
 

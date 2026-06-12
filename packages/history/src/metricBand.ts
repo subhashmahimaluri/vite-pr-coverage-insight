@@ -81,14 +81,50 @@ function gateCard(gate: GateCardInfo, series: HistoryPoint[], theme: Theme): str
   ].join('');
 }
 
+/** 🧬 test strength from an ingested Stryker report */
+export type MutationCardInfo = {
+  score: number;
+  delta: number | null;
+  /** surviving mutants in changed files — shown as the card's sub-line */
+  changedSurvivors?: number;
+};
+
+function mutationCard(info: MutationCardInfo, theme: Theme, x: number): string {
+  const t = THEMES[theme];
+  const color = bandColor(info.score); // Stryker's own 80/60 bands match ours
+  const dColor = deltaColor(info.delta, theme);
+  const arrow = info.delta === null || info.delta === 0 ? '' : info.delta > 0 ? '▲' : '▼';
+  const deltaText =
+    info.delta === null
+      ? ''
+      : info.delta === 0
+        ? '±0.0'
+        : `${arrow}${Math.abs(info.delta).toFixed(1)}`;
+  const sub =
+    info.changedSurvivors !== undefined && info.changedSurvivors > 0
+      ? `${info.changedSurvivors} surviving in changed files`
+      : 'mutants killed by the tests';
+  return [
+    `<rect x="${x}" y="0" width="${CARD_W}" height="${CARD_H}" rx="8" fill="${t.card}"/>`,
+    `<text x="${x + 14}" y="22" font-size="12" fill="${t.muted}">🧬 Mutation</text>`,
+    `<text x="${x + 14}" y="48" font-size="22" font-weight="700" fill="${color}">${info.score.toFixed(1)}%</text>`,
+    deltaText
+      ? `<text x="${x + CARD_W - 14}" y="48" font-size="13" font-weight="600" text-anchor="end" fill="${dColor}">${deltaText}</text>`
+      : '',
+    `<text x="${x + 14}" y="66" font-size="11" fill="${
+      info.changedSurvivors ? '#cf222e' : t.muted
+    }">${sub}</text>`,
+  ].join('');
+}
+
 export function renderMetricBandSvg(
   series: HistoryPoint[],
   theme: Theme,
-  opts: { gate?: GateCardInfo } = {}
+  opts: { gate?: GateCardInfo; mutation?: MutationCardInfo } = {}
 ): string {
   const t = THEMES[theme];
   const offset = opts.gate ? 1 : 0;
-  const cardCount = 4 + offset;
+  const cardCount = 4 + offset + (opts.mutation ? 1 : 0);
   const width = CARD_W * cardCount + GAP * (cardCount - 1);
   const cards = METRIC_KEYS.map((key, index) => {
     const i = index + offset;
@@ -120,12 +156,16 @@ export function renderMetricBandSvg(
   }).join('');
 
   const lead = opts.gate ? gateCard(opts.gate, series, theme) : '';
+  // 🧬 mutation closes the band — the premium tier above plain coverage
+  const tail = opts.mutation
+    ? mutationCard(opts.mutation, theme, (4 + offset) * (CARD_W + GAP))
+    : '';
 
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${CARD_H}" ` +
     `viewBox="0 0 ${width} ${CARD_H}" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" role="img" ` +
-    `aria-label="coverage gate verdict and metrics">` +
-    `<rect width="${width}" height="${CARD_H}" fill="${t.bg}"/>${lead}${cards}</svg>`
+    `aria-label="coverage gate verdict, metrics and mutation score">` +
+    `<rect width="${width}" height="${CARD_H}" fill="${t.bg}"/>${lead}${cards}${tail}</svg>`
   );
 }
 

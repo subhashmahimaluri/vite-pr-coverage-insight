@@ -740,12 +740,66 @@ function shieldsCardsSection(report: CoverageReport): string {
       '</td>',
     ].join('\n');
   });
+  // 🧬 mutation card joins the row when a Stryker report was ingested
+  const m = report.mutation;
+  if (m && m.score !== null) {
+    const delta =
+      m.delta === null
+        ? ''
+        : m.delta === 0
+          ? '  ±0.00'
+          : `  ${m.delta > 0 ? '▲' : '▼'} ${m.delta > 0 ? '+' : '−'}${Math.abs(m.delta).toFixed(2)}`;
+    const message = encodeURIComponent(`${m.score.toFixed(1)}%${delta}`);
+    cells.push(
+      [
+        '<td align="center">',
+        '<h3>🧬 MUTATION</h3>',
+        `<img alt="Mutation score ${m.score.toFixed(1)}%" ` +
+          `src="https://img.shields.io/badge/${message}-${bandHex(m.score)}?style=for-the-badge">` +
+          `<br><br><sub><i>${m.detected} / ${m.total} mutants killed</i></sub>`,
+        '</td>',
+      ].join('\n')
+    );
+  }
   return [
     '<table><tr>',
     ...cells,
     '</tr></table>',
     '',
     '<sub>This PR’s coverage · ▲▼ vs base · grant `contents: write` in the workflow for the full band with 🚦 gate card and trend sparklines</sub>',
+  ].join('\n');
+}
+
+/**
+ * 🧬 surviving mutants in files this PR touched — each one is a seeded bug
+ * the test suite did not notice. Collapsed; diff-aware (pre-existing weak
+ * tests live in the fix plan, not here).
+ */
+function survivingMutantsSection(report: CoverageReport): string {
+  const survivors = report.mutation?.changedFileSurvivors ?? [];
+  if (survivors.length === 0) return '';
+  const rows = survivors
+    .slice(0, 25)
+    .map(
+      (m) =>
+        `| ${linkedPath(report, m.file)}:${m.line} | \`${m.mutator}\` | ${
+          m.replacement ? `\`${m.replacement.replace(/\|/g, '\\|').slice(0, 60)}\`` : '—'
+        } |`
+    );
+  const more =
+    survivors.length > 25 ? `\n\n_…and ${survivors.length - 25} more — see the fix plan._` : '';
+  return [
+    '<details>',
+    `<summary>🧬 Surviving mutants in changed files (${survivors.length}) — bugs the tests missed</summary>`,
+    '',
+    'Each row is a code change the test suite did **not** notice. Kill prompts are in the fix-plan artifact.',
+    '',
+    '| Where | Mutator | Mutated into |',
+    '| --- | --- | --- |',
+    ...rows,
+    more,
+    '',
+    '</details>',
   ].join('\n');
 }
 
@@ -781,6 +835,7 @@ function sectionsFor(report: CoverageReport, opts: RenderMarkdownOptions): Secti
   push(warningsSection(report), { protected: true });
   push(band, { protected: true });
   push(stalenessNote(report), { protected: true });
+  push(survivingMutantsSection(report), { protected: true });
 
   const deltaGroups = (withDeltasFlag: boolean) => {
     push(changedFilesSection(report, withDeltasFlag), {

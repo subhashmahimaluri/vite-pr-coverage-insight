@@ -9,6 +9,7 @@ import {
   type FileReport,
   type MetricDelta,
   type MetricKey,
+  type MutationSummary,
   type PolicyResult,
   type ProjectReport,
   type ReportState,
@@ -60,6 +61,8 @@ export type BuildReportInput = {
     source?: string;
     thresholds?: Partial<Record<MetricKey, number>>;
   };
+  /** 🧬 ingested Stryker mutation report + the baseline's recorded score */
+  mutation?: { summary: MutationSummary; baselineScore?: number | null };
 };
 
 /** Rounds to 2 decimals (D7: same input ⇒ same output, no float drift). */
@@ -222,7 +225,34 @@ export function buildReport(input: BuildReportInput): CoverageReport {
     ...(input.errors ? { errors: input.errors } : {}),
     ...(input.warnings && input.warnings.length > 0 ? { warnings: input.warnings } : {}),
     ...(input.history ? { history: input.history } : {}),
+    ...(input.mutation ? { mutation: buildMutation(input.mutation, input.touchedFiles) } : {}),
   };
 
   return coverageReportSchema.parse(report);
+}
+
+function buildMutation(
+  input: NonNullable<BuildReportInput['mutation']>,
+  touchedFiles?: string[]
+): NonNullable<CoverageReport['mutation']> {
+  const { summary, baselineScore } = input;
+  // only files the PR touched — surviving mutants elsewhere are pre-existing
+  // debt, reported via the fix plan, never the headline (the house rule)
+  const touched = new Set(touchedFiles ?? []);
+  const changedFileSurvivors = Object.entries(summary.survivedByFile)
+    .filter(([file]) => touched.has(file))
+    .flatMap(([, mutants]) => mutants)
+    .sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+  return {
+    score: summary.score,
+    detected: summary.detected,
+    survived: summary.survived,
+    noCoverage: summary.noCoverage,
+    total: summary.total,
+    delta:
+      summary.score !== null && baselineScore !== null && baselineScore !== undefined
+        ? round2(summary.score - baselineScore)
+        : null,
+    changedFileSurvivors,
+  };
 }

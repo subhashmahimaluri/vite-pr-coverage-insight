@@ -8,6 +8,8 @@ export type BaselineEntry = {
   ref: string;
   timestamp: string;
   summary: CoverageSummary;
+  /** 🧬 mutation score recorded with the baseline — drives the band's Δ */
+  mutationScore?: number;
 };
 
 export type BaselineIndex = {

@@ -145,6 +145,28 @@ export const coverageReportSchema = z.object({
       skippedReason: z.string().optional(),
     })
     .optional(),
+  /** 🧬 test strength from an ingested Stryker mutation report */
+  mutation: z
+    .object({
+      /** detected / valid * 100; null when the report had no valid mutants */
+      score: z.number().nullable(),
+      detected: z.number().int(),
+      survived: z.number().int(),
+      noCoverage: z.number().int(),
+      total: z.number().int(),
+      /** vs the baseline's recorded score, when available */
+      delta: z.number().nullable(),
+      /** surviving mutants in files this PR touched — what to kill first */
+      changedFileSurvivors: z.array(
+        z.object({
+          file: z.string(),
+          line: z.number().int(),
+          mutator: z.string(),
+          replacement: z.string().optional(),
+        })
+      ),
+    })
+    .optional(),
 });
 
 export type CoverageReport = z.infer<typeof coverageReportSchema>;

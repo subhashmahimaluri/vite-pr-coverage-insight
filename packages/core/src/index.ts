@@ -9,3 +9,5 @@ export * from './policy/types';
 export * from './policy/engine';
 export * from './report/schema';
 export * from './parsers';
+export { parseMutationReport } from './mutation/parse';
+export type { MutationSummary, SurvivedMutant } from './mutation/parse';

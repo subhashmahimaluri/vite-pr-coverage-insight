@@ -8,11 +8,13 @@ import {
   applyInputOverrides,
   evaluatePolicy,
   loadConfig,
+  parseMutationReport,
   relativizeModel,
   summaryToModel,
   type Config,
   type CoverageModel,
   type CoverageSummary,
+  type MutationSummary,
   type PolicyResult,
   type TestFailuresResult,
 } from '@coverage-insight/core';
@@ -134,6 +136,21 @@ async function runBaselineMode(): Promise<void> {
     console.warn(`⚠️ Badge generation skipped: ${error}`);
   }
 
+  // 🧬 record the default branch's mutation score so PR bands can show a Δ
+  let mutationScore: number | undefined;
+  const baselineMutationPath = getInput('mutation');
+  if (baselineMutationPath) {
+    try {
+      const parsed = parseMutationReport(
+        fs.readFileSync(path.resolve(baselineMutationPath), 'utf-8'),
+        workspace
+      );
+      if (parsed.score !== null) mutationScore = parsed.score;
+    } catch (error) {
+      console.warn(`⚠️ Mutation report skipped: ${briefError(error)}`);
+    }
+  }
+
   const result = await publishBaseline({
     octokit,
     owner,
@@ -142,6 +159,7 @@ async function runBaselineMode(): Promise<void> {
     ref: context.ref,
     summary,
     branch,
+    ...(mutationScore !== undefined ? { mutationScore } : {}),
     extraFiles,
   });
 
@@ -170,7 +188,22 @@ async function runReportMode(): Promise<void> {
   const baselineMode = (getInput('baseline-mode') || 'auto') as 'auto' | 'branch' | 'scan' | 'off';
   const fixPlanFile = getInput('fix-plan-file') || 'coverage-fix-plan.md';
   const uploadArtifact = (getInput('upload-artifact') || 'true') === 'true';
+  const mutationPath = getInput('mutation');
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
+
+  // 🧬 optional Stryker mutation report — coverage says the code ran,
+  // the mutation score says the tests would notice a bug
+  let mutationSummary: MutationSummary | null = null;
+  if (mutationPath) {
+    try {
+      mutationSummary = parseMutationReport(
+        fs.readFileSync(path.resolve(mutationPath), 'utf-8'),
+        workspace
+      );
+    } catch (error) {
+      console.warn(`⚠️ Mutation report skipped: ${briefError(error)}`);
+    }
+  }
 
   const { owner, repo } = context.repo;
   const prNumber = context.payload.pull_request?.number;
@@ -268,6 +301,7 @@ async function runReportMode(): Promise<void> {
   // base: explicit input (v1, D4) wins over the baseline store (Stage 2.2)
   let base: CoverageModel | null = null;
   let baseline: BuildReportInput['baseline'] = null;
+  let baselineMutationScore: number | null = null;
   if (basePath) {
     try {
       const summary = JSON.parse(
@@ -305,6 +339,7 @@ async function runReportMode(): Promise<void> {
               process.env.GITHUB_WORKSPACE ?? workspace
             );
             baseline = resolved.meta;
+            baselineMutationScore = resolved.mutationScore ?? null;
             console.log(
               `ℹ️ Baseline resolved via ${resolved.meta.source} (${resolved.meta.sha.slice(0, 7)}, staleness ${resolved.meta.staleness})`
             );
@@ -465,6 +500,20 @@ async function runReportMode(): Promise<void> {
         // UNIQUE filename per run — camo and the raw CDN cache by path, so a
         // fixed path can keep serving a stale band no matter the query string
         const uniq = `${headPoint.sha.slice(0, 7)}-${context.runId}`;
+        const touched = new Set(touchedFiles ?? []);
+        const mutationCard =
+          mutationSummary && mutationSummary.score !== null
+            ? {
+                score: mutationSummary.score,
+                delta:
+                  baselineMutationScore !== null
+                    ? Math.round((mutationSummary.score - baselineMutationScore) * 100) / 100
+                    : null,
+                changedSurvivors: Object.entries(mutationSummary.survivedByFile)
+                  .filter(([file]) => touched.has(file))
+                  .reduce((sum, [, mutants]) => sum + mutants.length, 0),
+              }
+            : undefined;
         await commitBranchFiles({
           octokit,
           owner,
@@ -473,7 +522,7 @@ async function runReportMode(): Promise<void> {
           message: `pr #${prNumber} metric band (${headPoint.sha.slice(0, 7)})`,
           files: (['light', 'dark'] as const).map((theme) => ({
             path: prMetricBandPath(prNumber, theme, uniq),
-            content: renderMetricBandSvg(prSeries, theme, { gate }),
+            content: renderMetricBandSvg(prSeries, theme, { gate, mutation: mutationCard }),
           })),
         });
         badgeImages = {
@@ -507,6 +556,9 @@ async function runReportMode(): Promise<void> {
     ...(errors.length > 0 ? { errors } : {}),
     ...(warnings.length > 0 ? { warnings } : {}),
     ...(history ? { history } : {}),
+    ...(mutationSummary
+      ? { mutation: { summary: mutationSummary, baselineScore: baselineMutationScore } }
+      : {}),
   });
 
   // D6: the JSON artifact is emitted in EVERY state, plus the HTML twin and

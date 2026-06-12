@@ -15,7 +15,8 @@ Ported from the sibling [pr-review-insight](https://github.com/subhashmahimaluri
 - [x] **Built-in artifact upload** — JSON + HTML + fix plan on every run, 📥-linked from the comment footer
 - [ ] `gh`-native fix loop (`gh run download` → Copilot Workspace per fix-plan item)
 - [ ] **Patch coverage gate** — % of the PR's added lines covered, as a first-class gate next to totals/ratchet
-- [ ] **🧬 Mutation gate** — ingest Stryker's `mutation-report.json` (`--incremental` keeps PR runs fast): new band card "🧬 Mutation 72.4%", diff-aware gate (surviving mutants in changed files only), and fix-plan prompts per surviving mutant ("write a test that kills `>=`→`>` at src/pricing.ts:42"). Coverage says code _ran_; mutation score says the tests would _notice a bug_ — the natural premium tier above the coverage gate. Plan: [pr-review-insight/docs/test-strength-plan.md](https://github.com/subhashmahimaluri/pr-review-insight/blob/main/docs/test-strength-plan.md)
+- [x] **🧬 Mutation score** (display + AI loop) — `mutation:` input ingests Stryker's json report: band card with score + Δ vs the baseline's recorded score, surviving-mutants-in-changed-files table in the comment, kill prompts in the fix plan. Plan: [pr-review-insight/docs/test-strength-plan.md](https://github.com/subhashmahimaluri/pr-review-insight/blob/main/docs/test-strength-plan.md)
+- [ ] **🧬 Mutation gate** (blocking) — fail the job on surviving mutants in changed files / score drop vs base, once teams have lived with the display tier
 - [ ] Test-strength dogfood — fast-check property tests (truncation budget, parser invariants) + Stryker nightly on `packages/core`, mirroring the sibling repo
 - [ ] Band pruning — clean old `badges/pr-*/` files during baseline runs
 
