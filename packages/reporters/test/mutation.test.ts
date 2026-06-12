@@ -159,7 +159,7 @@ describe('report + comment + fix plan integration', () => {
 
   it('adds the 🧬 card to the shields fallback with killed counts', () => {
     const md = renderMarkdown(reportWithMutation(), { visuals: 'images' });
-    expect(md).toContain('<h3>🧬 MUTATION</h3>');
+    expect(md).toContain('<b>🧬 MUTATION</b>');
     expect(md).toContain(encodeURIComponent('40.0%'));
     expect(md).toContain('2/5 killed');
   });

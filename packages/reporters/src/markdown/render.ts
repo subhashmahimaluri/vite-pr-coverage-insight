@@ -742,9 +742,9 @@ function shieldsCardsSection(report: CoverageReport): string {
         : '';
     return [
       '<td align="center">',
-      // GitHub comments strip CSS — <h3> is the sanctioned way to get a
-      // larger, heavier label with real margin under it
-      `<h4>${METRIC_ICONS[key]} ${METRIC_LABELS[key].toUpperCase()}</h4>`,
+      // plain <b> instead of a heading: headings carry GitHub's fixed 24px
+      // top margin — bold text leaves only the cell's own ~6px padding
+      `<b>${METRIC_ICONS[key]} ${METRIC_LABELS[key].toUpperCase()}</b><br>`,
       `${badge}${counts}`,
       '</td>',
     ].join('\n');
@@ -762,7 +762,7 @@ function shieldsCardsSection(report: CoverageReport): string {
     cells.push(
       [
         '<td align="center">',
-        '<h3>🧬 MUTATION</h3>',
+        '<b>🧬 MUTATION</b><br>',
         `<img alt="Mutation score ${m.score.toFixed(1)}%" ` +
           `src="https://img.shields.io/badge/${message}-${bandHex(m.score)}?style=for-the-badge">` +
           `<br><sub><i>${m.detected}/${m.total} killed</i></sub>`,
