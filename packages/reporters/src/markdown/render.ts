@@ -711,44 +711,39 @@ type Section = {
 function shieldsCardsSection(report: CoverageReport): string {
   const totals = report.totals;
   if (!totals) return '';
+  // the SVG band's palette — deep GitHub greens, not shields' neon defaults
+  const bandHex = (pct: number): string => (pct >= 80 ? '1a7f37' : pct >= 60 ? '9a6700' : 'cf222e');
   const cells = METRIC_KEYS.map((key) => {
     const m = totals[key];
-    const color = m.head >= 80 ? 'brightgreen' : m.head >= 60 ? 'yellow' : 'red';
-    const pct = encodeURIComponent(`${m.head.toFixed(1)}%`);
-    const big = `<img alt="${METRIC_LABELS[key]} ${m.head.toFixed(1)}%" src="https://img.shields.io/badge/${pct}-${color}?style=for-the-badge">`;
-
-    // U+2212 minus (not ASCII '-') so shields doesn't treat it as a separator
-    const deltaColor =
-      m.delta === null || m.delta === 0 ? 'lightgrey' : m.delta > 0 ? 'green' : 'red';
-    const deltaText =
+    // ONE badge per card: value + delta together, calm and readable.
+    // U+2212 minus (not ASCII '-') so shields doesn't treat it as a separator.
+    const delta =
       m.delta === null
-        ? 'vs base n/a'
+        ? ''
         : m.delta === 0
-          ? '±0.00'
-          : `${m.delta > 0 ? '+' : '−'}${Math.abs(m.delta).toFixed(2)} ${m.delta > 0 ? '▲' : '▼'}`;
-    const deltaBadge = `<img alt="delta ${deltaText}" src="https://img.shields.io/badge/Δ-${encodeURIComponent(deltaText)}-${deltaColor}?style=flat-square">`;
-
+          ? '  ±0.00'
+          : `  ${m.delta > 0 ? '▲' : '▼'} ${m.delta > 0 ? '+' : '−'}${Math.abs(m.delta).toFixed(2)}`;
+    const message = encodeURIComponent(`${m.head.toFixed(1)}%${delta}`);
+    const badge =
+      `<img alt="${METRIC_LABELS[key]} ${m.head.toFixed(1)}% (Δ${delta.trim() || ' n/a'})" ` +
+      `src="https://img.shields.io/badge/${message}-${bandHex(m.head)}?style=for-the-badge">`;
     const counts =
       typeof m.covered === 'number' && typeof m.total === 'number'
-        ? `<sub>${m.covered} / ${m.total} covered</sub>`
+        ? `<br><sub>${m.covered} / ${m.total} covered</sub>`
         : '';
     return [
       '<td align="center">',
-      `<b>${METRIC_LABELS[key]}</b><br>`,
-      `${big}<br>`,
-      `${deltaBadge}${counts ? '<br>' : ''}`,
-      counts,
+      `<sub><b>${METRIC_LABELS[key].toUpperCase()}</b></sub><br>`,
+      `${badge}${counts}`,
       '</td>',
-    ]
-      .filter(Boolean)
-      .join('\n');
+    ].join('\n');
   });
   return [
     '<table><tr>',
     ...cells,
     '</tr></table>',
     '',
-    '<sub>This PR’s coverage · Δ vs base · grant `contents: write` in the workflow for trend cards with sparklines</sub>',
+    '<sub>This PR’s coverage · ▲▼ vs base · grant `contents: write` in the workflow for the full band with 🚦 gate card and trend sparklines</sub>',
   ].join('\n');
 }
 
