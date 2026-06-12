@@ -701,32 +701,54 @@ type Section = {
 };
 
 /**
- * PR-true badge cards rendered by shields.io straight from the URL — no file
+ * PR-true metric CARDS rendered by shields.io straight from the URL — no file
  * has to be committed anywhere, so this works without `contents: write`.
- * Used in images mode when no live per-PR band SVG could be published.
- * Public repos only (the `images` visuals mode already guarantees that).
+ * One card per metric: name, a big color-coded percentage box, a colored
+ * delta badge, and covered/total. Used in images mode when no live per-PR
+ * band SVG could be published. Public repos only (the `images` visuals mode
+ * already guarantees that).
  */
 function shieldsCardsSection(report: CoverageReport): string {
   const totals = report.totals;
   if (!totals) return '';
-  const cards = METRIC_KEYS.map((key) => {
+  const cells = METRIC_KEYS.map((key) => {
     const m = totals[key];
     const color = m.head >= 80 ? 'brightgreen' : m.head >= 60 ? 'yellow' : 'red';
+    const pct = encodeURIComponent(`${m.head.toFixed(1)}%`);
+    const big = `<img alt="${METRIC_LABELS[key]} ${m.head.toFixed(1)}%" src="https://img.shields.io/badge/${pct}-${color}?style=for-the-badge">`;
+
     // U+2212 minus (not ASCII '-') so shields doesn't treat it as a separator
-    const delta =
+    const deltaColor =
+      m.delta === null || m.delta === 0 ? 'lightgrey' : m.delta > 0 ? 'green' : 'red';
+    const deltaText =
       m.delta === null
-        ? ''
+        ? 'vs base n/a'
         : m.delta === 0
-          ? ' (±0.0)'
-          : ` (${m.delta > 0 ? '+' : '−'}${Math.abs(m.delta).toFixed(2)} ${m.delta > 0 ? '▲' : '▼'})`;
-    const message = encodeURIComponent(`${m.head.toFixed(1)}%${delta}`);
-    const label = encodeURIComponent(METRIC_LABELS[key]);
-    return `![${METRIC_LABELS[key]}](https://img.shields.io/badge/${label}-${message}-${color}?style=for-the-badge)`;
+          ? '±0.00'
+          : `${m.delta > 0 ? '+' : '−'}${Math.abs(m.delta).toFixed(2)} ${m.delta > 0 ? '▲' : '▼'}`;
+    const deltaBadge = `<img alt="delta ${deltaText}" src="https://img.shields.io/badge/Δ-${encodeURIComponent(deltaText)}-${deltaColor}?style=flat-square">`;
+
+    const counts =
+      typeof m.covered === 'number' && typeof m.total === 'number'
+        ? `<sub>${m.covered} / ${m.total} covered</sub>`
+        : '';
+    return [
+      '<td align="center">',
+      `<b>${METRIC_LABELS[key]}</b><br>`,
+      `${big}<br>`,
+      `${deltaBadge}${counts ? '<br>' : ''}`,
+      counts,
+      '</td>',
+    ]
+      .filter(Boolean)
+      .join('\n');
   });
   return [
-    cards.join(' '),
+    '<table><tr>',
+    ...cells,
+    '</tr></table>',
     '',
-    '<sub>This PR’s coverage · grant `contents: write` in the workflow for trend cards with sparklines</sub>',
+    '<sub>This PR’s coverage · Δ vs base · grant `contents: write` in the workflow for trend cards with sparklines</sub>',
   ].join('\n');
 }
 

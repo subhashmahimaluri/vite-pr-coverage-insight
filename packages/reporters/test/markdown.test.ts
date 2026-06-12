@@ -296,10 +296,14 @@ describe('visuals modes', () => {
       { visuals: 'images' } // no badgeImages — e.g. missing contents: write
     );
     expect(md).not.toContain('<picture>');
-    expect(md).toContain('img.shields.io/badge/Statements-');
-    expect(md).toContain(encodeURIComponent('90.0%')); // head value, not 80% base
-    expect(md).toContain(encodeURIComponent('▲')); // delta vs base in the badge
-    expect(md).toContain('brightgreen');
+    // card layout: 4 cells, each with metric name + big % box + delta badge
+    expect(md).toContain('<table><tr>');
+    expect(md.match(/<td align="center">/g)).toHaveLength(4);
+    expect(md).toContain('<b>Statements</b>');
+    expect(md).toContain(`img.shields.io/badge/${encodeURIComponent('90.0%')}-brightgreen`);
+    expect(md).toContain('?style=for-the-badge');
+    expect(md).toContain(encodeURIComponent('▲')); // delta vs base in its own badge
+    expect(md).toContain('-green?style=flat-square'); // positive delta is green
     expect(md).toContain('grant `contents: write`');
     // detailed tables still collapse behind the spoiler
     expect(md).toContain('<summary>📊 Coverage report — this PR vs base branch</summary>');
