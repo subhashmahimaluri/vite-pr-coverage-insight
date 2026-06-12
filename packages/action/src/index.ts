@@ -19,8 +19,10 @@ import {
 import {
   buildProjectReports,
   buildReport,
+  renderFixPlan,
   renderHtml,
   renderMarkdown,
+  renderTestPromptsSection,
   type BuildReportInput,
   type InputError,
 } from '@coverage-insight/reporters';
@@ -36,6 +38,7 @@ import {
 import { runAiSections } from './aiSections';
 import { collectAnnotations, type AnnotationsMode } from './annotations';
 import { commitBranchFiles, publishBaseline } from './baseline/publish';
+import { coverageFromMergeBase } from './baseline/dualRun';
 import { getMergeBaseSha, resolveBaseline } from './baseline/resolve';
 import {
   BaselineOctokit,
@@ -164,6 +167,9 @@ async function runReportMode(): Promise<void> {
   const aiInput = getInput('ai') as Config['ai'] | '';
   const aiCanBlock = getInput('ai-can-block') === 'true';
   const annotationsMode = (getInput('annotations') || 'all') as AnnotationsMode;
+  const baselineMode = (getInput('baseline-mode') || 'auto') as 'auto' | 'branch' | 'scan' | 'off';
+  const fixPlanFile = getInput('fix-plan-file') || 'coverage-fix-plan.md';
+  const uploadArtifact = (getInput('upload-artifact') || 'true') === 'true';
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
 
   const { owner, repo } = context.repo;
@@ -277,30 +283,55 @@ async function runReportMode(): Promise<void> {
         hint: 'fix the `base` path, or omit it to auto-resolve from the baseline store',
       });
     }
-  } else {
+  } else if (baselineMode !== 'off') {
     const baseRef = context.payload.pull_request?.base?.ref as string | undefined;
     const headSha = context.payload.pull_request?.head?.sha as string | undefined;
     if (baseRef && headSha) {
       try {
         const mergeBaseSha = await getMergeBaseSha({ octokit, owner, repo, baseRef, headSha });
-        const resolved = await resolveBaseline({
-          octokit,
-          owner,
-          repo,
-          mergeBaseSha,
-          branch: baselineBranch,
-          restoreCache: (sha) => restoreBaselineFromCache(sha),
-        });
-        if (resolved) {
-          // older baselines may carry absolute runner paths — relativize both eras
-          base = relativizeModel(
-            summaryToModel(resolved.summary),
-            process.env.GITHUB_WORKSPACE ?? workspace
-          );
-          baseline = resolved.meta;
-          console.log(
-            `ℹ️ Baseline resolved via ${resolved.meta.source} (${resolved.meta.sha.slice(0, 7)}, staleness ${resolved.meta.staleness})`
-          );
+        if (baselineMode === 'auto' || baselineMode === 'branch') {
+          const resolved = await resolveBaseline({
+            octokit,
+            owner,
+            repo,
+            mergeBaseSha,
+            branch: baselineBranch,
+            restoreCache: (sha) => restoreBaselineFromCache(sha),
+          });
+          if (resolved) {
+            // older baselines may carry absolute runner paths — relativize both eras
+            base = relativizeModel(
+              summaryToModel(resolved.summary),
+              process.env.GITHUB_WORKSPACE ?? workspace
+            );
+            baseline = resolved.meta;
+            console.log(
+              `ℹ️ Baseline resolved via ${resolved.meta.source} (${resolved.meta.sha.slice(0, 7)}, staleness ${resolved.meta.staleness})`
+            );
+          }
+        }
+        // dual-run: no recorded baseline needed — test the merge-base right here
+        const baseScript = getInput('base-run-script') || script;
+        if (!base && (baselineMode === 'auto' || baselineMode === 'scan') && baseScript) {
+          info(`Testing merge-base ${mergeBaseSha.slice(0, 7)} for the baseline (dual-run)…`);
+          try {
+            const scanned = coverageFromMergeBase({
+              workspace,
+              mergeBaseSha,
+              script: baseScript,
+              coveragePath: getInput('coverage') || headPath,
+            });
+            if (scanned) {
+              base = relativizeModel(summaryToModel(scanned), workspace);
+              baseline = { sha: mergeBaseSha, source: 'scan', staleness: 0 };
+            } else {
+              console.warn(
+                `⚠️ Merge-base ${mergeBaseSha.slice(0, 7)} not available locally — use actions/checkout with \`fetch-depth: 0\` to enable dual-run baselines`
+              );
+            }
+          } catch (error) {
+            console.warn(`⚠️ Dual-run baseline failed, reporting without a base: ${error}`);
+          }
         }
       } catch (error) {
         console.warn(`⚠️ Baseline resolution failed, reporting without a base: ${error}`);
@@ -394,7 +425,9 @@ async function runReportMode(): Promise<void> {
   const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/${baselineBranch}`;
   let badgeImages: { light: string; dark: string } | undefined;
   let bandCaption: string | undefined;
-  if (visuals === 'images' && historySeries.length > 0) {
+  // history is optional: dual-run users without a baseline branch still get
+  // the live band (sparklines simply need ≥2 points to draw)
+  if (visuals === 'images') {
     if (head) {
       try {
         const headPoint: HistoryPoint = {
@@ -416,6 +449,22 @@ async function runReportMode(): Promise<void> {
           },
         };
         const prSeries = [...historySeries, headPoint];
+        // 🚦 gate hero card — what the gate decided, in one glance
+        const thresholdsSet = Object.keys(config.thresholds ?? {}).length > 0 || config.ratchet;
+        const gate = {
+          verdict: policy.verdict,
+          subtitle:
+            policy.verdict === 'fail'
+              ? `${policy.violations.length} violation${policy.violations.length === 1 ? '' : 's'}`
+              : policy.verdict === 'warn'
+                ? 'decreased within tolerance'
+                : thresholdsSet
+                  ? 'all thresholds met'
+                  : 'report-only',
+        };
+        // UNIQUE filename per run — camo and the raw CDN cache by path, so a
+        // fixed path can keep serving a stale band no matter the query string
+        const uniq = `${headPoint.sha.slice(0, 7)}-${context.runId}`;
         await commitBranchFiles({
           octokit,
           owner,
@@ -423,16 +472,18 @@ async function runReportMode(): Promise<void> {
           branch: baselineBranch,
           message: `pr #${prNumber} metric band (${headPoint.sha.slice(0, 7)})`,
           files: (['light', 'dark'] as const).map((theme) => ({
-            path: prMetricBandPath(prNumber, theme),
-            content: renderMetricBandSvg(prSeries, theme),
+            path: prMetricBandPath(prNumber, theme, uniq),
+            content: renderMetricBandSvg(prSeries, theme, { gate }),
           })),
         });
-        const bust = `?v=${headPoint.sha.slice(0, 7)}`; // unique camo URL per run
         badgeImages = {
-          light: `${rawBase}/${prMetricBandPath(prNumber, 'light')}${bust}`,
-          dark: `${rawBase}/${prMetricBandPath(prNumber, 'dark')}${bust}`,
+          light: `${rawBase}/${prMetricBandPath(prNumber, 'light', uniq)}`,
+          dark: `${rawBase}/${prMetricBandPath(prNumber, 'dark', uniq)}`,
         };
-        bandCaption = 'This PR vs the base branch — delta against the latest baseline';
+        bandCaption =
+          baseline?.source === 'scan'
+            ? `This PR vs merge-base \`${baseline.sha.slice(0, 7)}\` (tested in this run)`
+            : 'This PR vs the base branch — delta against the latest baseline';
       } catch (error) {
         console.warn(
           `⚠️ Live PR metric band skipped (grant \`contents: write\` for sparkline cards) — showing shields.io badge cards: ${error}`
@@ -458,10 +509,35 @@ async function runReportMode(): Promise<void> {
     ...(history ? { history } : {}),
   });
 
-  // D6: the JSON artifact is emitted in EVERY state, plus the HTML twin
+  // D6: the JSON artifact is emitted in EVERY state, plus the HTML twin and
+  // the AI-ready fix plan (changed files with coverage gaps → test prompts)
   fs.writeFileSync(REPORT_JSON, JSON.stringify(report, null, 2));
   fs.writeFileSync(REPORT_HTML, renderHtml(report));
-  console.log(`📄 Wrote ${REPORT_JSON} and ${REPORT_HTML} (state: ${report.state})`);
+  fs.writeFileSync(fixPlanFile, renderFixPlan(report));
+  console.log(
+    `📄 Wrote ${REPORT_JSON}, ${REPORT_HTML} and ${fixPlanFile} (state: ${report.state})`
+  );
+
+  // built-in artifact upload — the 📥 download link works on every run
+  let artifactsUrl: string | undefined;
+  if (uploadArtifact) {
+    try {
+      const artifactModule =
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('@actions/artifact') as typeof import('@actions/artifact');
+      const { DefaultArtifactClient } = artifactModule;
+      const client = new DefaultArtifactClient();
+      await client.uploadArtifact(
+        'coverage-insight-report',
+        [REPORT_JSON, REPORT_HTML, fixPlanFile].map((f) => path.resolve(f)),
+        process.cwd(),
+        { retentionDays: 30 }
+      );
+      artifactsUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}#artifacts`;
+    } catch (error) {
+      console.warn(`⚠️ Report artifact upload skipped: ${briefError(error)}`);
+    }
+  }
 
   // optional AI sections (D2: dynamic import, off by default)
   const ai = await runAiSections({
@@ -476,7 +552,14 @@ async function runReportMode(): Promise<void> {
     fs.writeFileSync(AI_AUDIT, ai.auditJson);
   }
 
-  const markdown = renderMarkdown(report, { visuals, badgeImages, bandCaption }) + ai.sections;
+  const downloadFooter = artifactsUrl
+    ? `\n\n<sub>📥 [Download the full report](${artifactsUrl}) (HTML · JSON · fix plan)</sub>`
+    : '';
+  const markdown =
+    renderMarkdown(report, { visuals, badgeImages, bandCaption }) +
+    renderTestPromptsSection(report) +
+    ai.sections +
+    downloadFooter;
 
   const testsFailed = (testFailures?.numFailedTests ?? 0) > 0;
   let conclusion: 'success' | 'failure' | 'neutral' =

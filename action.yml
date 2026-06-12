@@ -21,6 +21,21 @@ inputs:
     required: false
     description: 'Orphan branch used as the baseline/history store'
     default: 'coverage-baseline'
+  baseline-mode:
+    required: false
+    description: "How to resolve the base coverage: 'auto' (recorded baseline, falling back to dual-run), 'branch' (recorded only), 'scan' (dual-run: test the merge-base in this job — no baseline branch needed, requires checkout fetch-depth: 0 and run-script), or 'off'"
+    default: 'auto'
+  base-run-script:
+    required: false
+    description: "Command run on the merge-base worktree for dual-run baselines (defaults to run-script). Include dependency install, e.g. 'npm ci && npm run test:coverage'"
+  fix-plan-file:
+    required: false
+    description: 'Markdown coverage fix plan — changed files with gaps first, one ready-to-paste AI test prompt each (Copilot Chat etc.)'
+    default: 'coverage-fix-plan.md'
+  upload-artifact:
+    required: false
+    description: 'Upload JSON + HTML + fix plan as a run artifact and link it from the PR comment (📥 download the full report)'
+    default: 'true'
   cache:
     required: false
     description: "Actions cache acceleration for baseline lookups: 'on' (default) or 'off'. The baseline branch remains the source of truth, so 'off' only costs one extra API read — use it if the cache service is flaky on your runners."

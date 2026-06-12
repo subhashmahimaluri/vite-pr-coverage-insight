@@ -9,7 +9,14 @@ import {
   type CoverageModel,
   type PolicyResult,
 } from '@coverage-insight/core';
-import { buildReport, renderHtml, renderMarkdown } from '@coverage-insight/reporters';
+import {
+  buildReport,
+  renderCopilotInstructions,
+  renderFixPlan,
+  renderHtml,
+  renderMarkdown,
+  upsertInstructions,
+} from '@coverage-insight/reporters';
 
 /**
  * Stage 3.3 — `covins`: the non-GitHub story (GitLab, Jenkins, Azure, local).
@@ -27,11 +34,14 @@ const USAGE = `covins — coverage compare / gate / report
 Usage:
   covins compare --base <file> --head <file>
   covins check   --head <file> [--base <file>]
-  covins report  --head <file> [--base <file>] --format md|json|html [--out <path>]
+  covins report  --head <file> [--base <file>] --format md|json|html|fixplan [--out <path>]
+  covins emit-instructions [--cwd <dir>] [--out <file>]
 
 Coverage files may be istanbul coverage-summary.json, lcov.info, or v8/c8
 coverage-final.json (auto-detected). Thresholds/ratchet come from
-coverage-insight.config.{ts,mjs,json} or the package.json "coverage-insight" key.`;
+coverage-insight.config.{ts,mjs,json} or the package.json "coverage-insight" key.
+emit-instructions writes the coverage policy as AI guidance into
+.github/copilot-instructions.md (idempotent, marker-delimited).`;
 
 function readModel(file: string): CoverageModel {
   return parseCoverage(fs.readFileSync(path.resolve(file), 'utf-8'));
@@ -99,8 +109,8 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
       case 'report': {
         if (!values.head) throw new Error('report requires --head');
         const format = values.format ?? 'md';
-        if (!['md', 'json', 'html'].includes(format)) {
-          throw new Error(`unknown --format '${format}' — expected md, json or html`);
+        if (!['md', 'json', 'html', 'fixplan'].includes(format)) {
+          throw new Error(`unknown --format '${format}' — expected md, json, html or fixplan`);
         }
         const head = readModel(values.head);
         const base = values.base ? readModel(values.base) : null;
@@ -128,13 +138,32 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
             ? renderMarkdown(report)
             : format === 'html'
               ? renderHtml(report)
-              : JSON.stringify(report, null, 2);
+              : format === 'fixplan'
+                ? renderFixPlan(report)
+                : JSON.stringify(report, null, 2);
         if (values.out) {
           fs.writeFileSync(path.resolve(values.out), output);
           io.stdout(`wrote ${values.out} (${format}, state: ${report.state})`);
         } else {
           io.stdout(output);
         }
+        return 0;
+      }
+
+      case 'emit-instructions': {
+        const cwd = path.resolve(values.cwd ?? process.cwd());
+        const out = path.resolve(cwd, values.out ?? '.github/copilot-instructions.md');
+        const loaded = await loadConfig(cwd);
+        const block = renderCopilotInstructions(loaded.config);
+        let existing: string | null = null;
+        try {
+          existing = fs.readFileSync(out, 'utf-8');
+        } catch {
+          // no existing file — we create it
+        }
+        fs.mkdirSync(path.dirname(out), { recursive: true });
+        fs.writeFileSync(out, upsertInstructions(existing, block));
+        io.stdout(`${existing ? 'updated' : 'created'} ${out} (policy: ${loaded.source})`);
         return 0;
       }
 

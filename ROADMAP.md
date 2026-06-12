@@ -2,6 +2,21 @@
 
 Six phases. Each ships independently and keeps the existing Action working throughout. Effort assumes part-time solo development; halve timelines with a second contributor.
 
+## Shipped June 2026 — AI-assisted coverage & dual-run (out of band)
+
+Ported from the sibling [pr-review-insight](https://github.com/subhashmahimaluri/pr-review-insight). The strategy for AI: **produce prompts and context, not API calls** — teams already pay for Copilot/Claude/Cursor; the action hands them perfect context, no vendor keys needed.
+
+- [x] 🚦 **Coverage gate card** leading the metric band (PASS/FAIL + policy subtitle + trend sparkline)
+- [x] **Unique per-run band filenames** — camo/raw CDN cache by path; fixed paths served stale bands
+- [x] **Dual-run baselines** (`baseline-mode: scan`) — test the merge-base in a temp git worktree in the same job; zero-setup alternative to the baseline branch (needs `fetch-depth: 0`)
+- [x] **Coverage fix plan** (`coverage-fix-plan.md`) — changed files with gaps first, one paste-ready AI test prompt each (with uncovered line ranges); repo-wide debt as a batch prompt
+- [x] 🤖 **Cover with AI** block in the PR comment (top 5 changed files with gaps)
+- [x] **`covins emit-instructions`** — writes the coverage policy into `.github/copilot-instructions.md` (idempotent, marker-delimited) so assistants ship tests with the code they write
+- [x] **Built-in artifact upload** — JSON + HTML + fix plan on every run, 📥-linked from the comment footer
+- [ ] `gh`-native fix loop (`gh run download` → Copilot Workspace per fix-plan item)
+- [ ] **Patch coverage gate** — % of the PR's added lines covered, as a first-class gate next to totals/ratchet
+- [ ] Band pruning — clean old `badges/pr-*/` files during baseline runs
+
 ## Phase 1 — Foundation (Q3 2026, ~4–6 weeks)
 
 Goal: trustworthy base. No new features until this is done.

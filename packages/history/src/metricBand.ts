@@ -51,10 +51,47 @@ function sparklinePath(values: number[], x0: number, y0: number, w: number, h: n
     .join(' ');
 }
 
-export function renderMetricBandSvg(series: HistoryPoint[], theme: Theme): string {
+/** the hero card: what the coverage gate decided, in one glance */
+export type GateCardInfo = {
+  verdict: 'pass' | 'warn' | 'fail';
+  /** e.g. '2 violations', 'all thresholds met', 'report-only' */
+  subtitle: string;
+};
+
+const VERDICT_STYLE: Record<GateCardInfo['verdict'], { color: string; label: string }> = {
+  pass: { color: '#1a7f37', label: 'PASS' },
+  warn: { color: '#9a6700', label: 'PASS' }, // decreased within tolerance still passes
+  fail: { color: '#cf222e', label: 'FAIL' },
+};
+
+function gateCard(gate: GateCardInfo, series: HistoryPoint[], theme: Theme): string {
   const t = THEMES[theme];
-  const width = CARD_W * 4 + GAP * 3;
-  const cards = METRIC_KEYS.map((key, i) => {
+  const style = VERDICT_STYLE[gate.verdict];
+  // the gate card sparkline shows the overall trend via lines%
+  const values = series.slice(-30).map((p) => p.metrics.lines);
+  const spark = sparklinePath(values, 14, 76, CARD_W - 28, 22);
+  const subtitle = gate.subtitle.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  return [
+    `<rect x="0" y="0" width="${CARD_W}" height="${CARD_H}" rx="8" fill="${t.card}" stroke="${style.color}" stroke-width="1.5"/>`,
+    `<text x="14" y="22" font-size="12" fill="${t.muted}">🚦 Coverage gate</text>`,
+    `<circle cx="${CARD_W - 18}" cy="18" r="4" fill="${style.color}"/>`,
+    `<text x="14" y="48" font-size="22" font-weight="700" fill="${style.color}">${style.label}</text>`,
+    `<text x="14" y="66" font-size="11" fill="${gate.verdict === 'fail' ? style.color : t.muted}">${subtitle}</text>`,
+    spark ? `<path d="${spark}" fill="none" stroke="${style.color}" stroke-width="2"/>` : '',
+  ].join('');
+}
+
+export function renderMetricBandSvg(
+  series: HistoryPoint[],
+  theme: Theme,
+  opts: { gate?: GateCardInfo } = {}
+): string {
+  const t = THEMES[theme];
+  const offset = opts.gate ? 1 : 0;
+  const cardCount = 4 + offset;
+  const width = CARD_W * cardCount + GAP * (cardCount - 1);
+  const cards = METRIC_KEYS.map((key, index) => {
+    const i = index + offset;
     const points = series.slice(-30);
     const values = points.map((p) => p.metrics[key]);
     const current = values[values.length - 1] ?? 0;
@@ -82,11 +119,13 @@ export function renderMetricBandSvg(series: HistoryPoint[], theme: Theme): strin
     ].join('');
   }).join('');
 
+  const lead = opts.gate ? gateCard(opts.gate, series, theme) : '';
+
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${CARD_H}" ` +
     `viewBox="0 0 ${width} ${CARD_H}" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" role="img" ` +
-    `aria-label="coverage metrics">` +
-    `<rect width="${width}" height="${CARD_H}" fill="${t.bg}"/>${cards}</svg>`
+    `aria-label="coverage gate verdict and metrics">` +
+    `<rect width="${width}" height="${CARD_H}" fill="${t.bg}"/>${lead}${cards}</svg>`
   );
 }
 
@@ -94,7 +133,13 @@ export function metricBandPath(theme: Theme): string {
   return `badges/metric-band-${theme}.svg`;
 }
 
-/** per-PR band: the head run appended to the history series, live PR values */
-export function prMetricBandPath(prNumber: number, theme: Theme): string {
-  return `badges/pr-${prNumber}-metric-band-${theme}.svg`;
+/**
+ * Per-PR band: the head run appended to the history series, live PR values.
+ * `uniq` (sha + run id) goes INTO the filename — camo and the raw CDN cache
+ * by path, so a fixed path can serve a stale band no matter the query string.
+ */
+export function prMetricBandPath(prNumber: number, theme: Theme, uniq?: string): string {
+  return uniq
+    ? `badges/pr-${prNumber}/${uniq}-${theme}.svg`
+    : `badges/pr-${prNumber}-metric-band-${theme}.svg`;
 }

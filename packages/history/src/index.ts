@@ -13,3 +13,4 @@ export {
 } from './publish';
 export type { BadgeFile, CommentImageOptions } from './publish';
 export { renderMetricBandSvg, metricBandPath, prMetricBandPath } from './metricBand';
+export type { GateCardInfo } from './metricBand';

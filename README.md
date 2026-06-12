@@ -3,13 +3,32 @@
 Coverage intelligence for pull requests: compares coverage between your base
 branch and the PR, **runs your tests only once per PR**, enforces configurable
 gates, and posts one continuously-updated PR comment — plus a versioned JSON
-artifact, a self-contained HTML report, trend sparklines, an optional AI risk
-review, and a `covins` CLI for GitLab/Jenkins/Azure.
+artifact, a self-contained HTML report, an AI-ready coverage fix plan, trend
+sparklines, an optional AI risk review, and a `covins` CLI for
+GitLab/Jenkins/Azure.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/gallery/metric-band-dark.svg">
+  <img alt="metric band: coverage gate verdict card plus one card per metric with value, covered/total, delta and trend sparkline" src="docs/gallery/metric-band-light.svg">
+</picture>
+
+> The metric band every PR gets: a 🚦 **coverage gate** verdict card and one
+> card per metric — value colored by coverage band, covered/total counts,
+> Δ vs base, 30-run trend sparkline. Light/dark aware, rendered live for the
+> PR's own numbers.
 
 ## Features
 
 - **Single-run pipeline** — PRs test only HEAD; base coverage comes from a
   stored baseline (PR CI time roughly halved vs. testing both branches)
+- **Dual-run when you prefer zero setup** — `baseline-mode: scan` tests the
+  PR's merge-base in a temp git worktree in the same job: no baseline branch,
+  no history dependency
+- **AI-ready fix plan** — `coverage-fix-plan.md` with one paste-ready test
+  prompt per changed file with gaps (Copilot Chat, Claude, Cursor — no API
+  keys), plus a 🤖 _Cover with AI_ block right in the PR comment
+- **Built-in report downloads** — JSON + HTML + fix plan uploaded as a run
+  artifact and 📥-linked from the comment footer, on every run
 - **Any coverage format** — istanbul `coverage-summary.json`, `lcov.info`, or
   v8/c8 `coverage-final.json`, auto-detected
 - **Policy gates** — thresholds per metric, per-path overrides, and a ratchet
@@ -142,22 +161,26 @@ live in [examples/workflows/](examples/workflows/).
 
 ## Inputs
 
-| Input             | Description                                                                                                       | Required | Default             |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------- | -------- | ------------------- |
-| `github-token`    | GitHub token for the PR comment / check run                                                                       | Yes      | -                   |
-| `mode`            | `report` posts the PR comment; `baseline` publishes coverage on main pushes                                       | No       | `report`            |
-| `head`            | PR coverage file (any supported format), **or a directory of shard summaries**                                    | Yes\*    | -                   |
-| `base`            | Base coverage file — omit to auto-resolve from the baseline store                                                 | No       | auto-resolved       |
-| `coverage`        | Coverage file for `baseline` mode (falls back to `head`)                                                          | No       | -                   |
-| `baseline-branch` | Orphan branch used as the baseline/history store                                                                  | No       | `coverage-baseline` |
-| `run-script`      | Test command the action runs first; on failure the failed test names are parsed from the output and the job fails | No       | -                   |
-| `thresholds`      | Coverage gate: `'80'` (all metrics), `'lines:85, branches:75'` or JSON — overrides the config file                | No       | -                   |
-| `test-failures`   | Path to a test-failures JSON file (full per-test detail incl. error messages)                                     | No       | -                   |
-| `use-check-run`   | Also publish a GitHub Check Run (conclusion follows the policy verdict)                                           | No       | `false`             |
-| `annotations`     | Diff annotations: `all` \| `coverage` \| `failed-tests` \| `none`                                                 | No       | `all`               |
-| `ai`              | `off` \| `comment` \| `review` — see [AI assistance](#ai-assistance-optional)                                     | No       | `off`               |
-| `ai-can-block`    | Only with `ai: review` — allow a high-risk AI verdict to set the check run neutral                                | No       | `false`             |
-| `cache`           | `off` disables Actions-cache acceleration of baseline lookups (the baseline branch is always the source of truth) | No       | `on`                |
+| Input             | Description                                                                                                       | Required | Default                |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
+| `github-token`    | GitHub token for the PR comment / check run                                                                       | Yes      | -                      |
+| `mode`            | `report` posts the PR comment; `baseline` publishes coverage on main pushes                                       | No       | `report`               |
+| `head`            | PR coverage file (any supported format), **or a directory of shard summaries**                                    | Yes\*    | -                      |
+| `base`            | Base coverage file — omit to auto-resolve from the baseline store                                                 | No       | auto-resolved          |
+| `coverage`        | Coverage file for `baseline` mode (falls back to `head`)                                                          | No       | -                      |
+| `baseline-branch` | Orphan branch used as the baseline/history store                                                                  | No       | `coverage-baseline`    |
+| `run-script`      | Test command the action runs first; on failure the failed test names are parsed from the output and the job fails | No       | -                      |
+| `thresholds`      | Coverage gate: `'80'` (all metrics), `'lines:85, branches:75'` or JSON — overrides the config file                | No       | -                      |
+| `test-failures`   | Path to a test-failures JSON file (full per-test detail incl. error messages)                                     | No       | -                      |
+| `use-check-run`   | Also publish a GitHub Check Run (conclusion follows the policy verdict)                                           | No       | `false`                |
+| `annotations`     | Diff annotations: `all` \| `coverage` \| `failed-tests` \| `none`                                                 | No       | `all`                  |
+| `ai`              | `off` \| `comment` \| `review` — see [AI assistance](#ai-assistance-optional)                                     | No       | `off`                  |
+| `ai-can-block`    | Only with `ai: review` — allow a high-risk AI verdict to set the check run neutral                                | No       | `false`                |
+| `cache`           | `off` disables Actions-cache acceleration of baseline lookups (the baseline branch is always the source of truth) | No       | `on`                   |
+| `baseline-mode`   | `auto` \| `branch` \| `scan` (dual-run — test the merge-base in this job, needs `fetch-depth: 0`) \| `off`        | No       | `auto`                 |
+| `base-run-script` | Command for the merge-base worktree in dual-run mode (include installs, e.g. `npm ci && npm run test:coverage`)   | No       | `run-script`           |
+| `fix-plan-file`   | Markdown coverage fix plan with paste-ready AI test prompts                                                       | No       | `coverage-fix-plan.md` |
+| `upload-artifact` | Upload JSON + HTML + fix plan as a run artifact, 📥-linked from the comment                                       | No       | `true`                 |
 
 \* required in `report` mode. Explicit `base:` works exactly as in v1 and
 overrides baseline resolution.
@@ -210,7 +233,16 @@ the comment shows a compliance table and the "shortest path to green".
 3. try `baselines/<sha>.json` on the `coverage-baseline` branch
 4. walk up to 50 ancestor commits and use the nearest baseline (the comment
    notes how many commits behind it is)
-5. otherwise post the absolute-numbers "Baseline recorded" report
+5. **dual-run fallback** (`baseline-mode: auto`/`scan`): check out the
+   merge-base in a temp git worktree, run `base-run-script` (default:
+   `run-script`) there, and use its coverage — costs a second test run but
+   needs no baseline branch at all. Requires `actions/checkout` with
+   `fetch-depth: 0`. The band caption then reads
+   _"This PR vs merge-base `<sha>` (tested in this run)"_
+6. otherwise post the absolute-numbers "Baseline recorded" report
+
+`baseline-mode: branch` skips step 5 (recorded baselines only, fastest);
+`baseline-mode: scan` skips steps 2–4 (always dual-run, zero setup).
 
 ## Artifacts (integration surface)
 
@@ -224,10 +256,22 @@ Every run — including error states — writes:
   forbids all external loads, opens from `file://`): verdict header, trend
   chart with threshold line, directory treemap, sortable/searchable file
   table, uncovered-line ranges, dark mode.
+- **`coverage-fix-plan.md`** — the AI-ready fix plan: changed files with
+  coverage gaps first (one paste-ready test prompt each, with uncovered line
+  ranges), then the repo's lowest-covered files as a batch prompt. Works with
+  Copilot Chat, Claude or Cursor — no API keys, no vendor lock-in.
 - **`ai-audit.json`** — when AI ran: every prompt, response, token count and
   cost estimate.
 
-Upload them with `actions/upload-artifact` as in the quick start.
+**Downloads are built in**: the action uploads JSON + HTML + fix plan as a
+run artifact (`upload-artifact: true` default) and the comment footer links it
+— _📥 download the full report_. The comment itself also carries a collapsed
+_🤖 Cover with AI_ block with prompts for up to 5 changed files.
+
+**Prevention** — `npx covins emit-instructions` writes your coverage policy as
+AI guidance into `.github/copilot-instructions.md` (idempotent,
+marker-delimited), so assistants ship tests alongside the code they write
+instead of failing the gate afterwards.
 
 ## Trend history & badges
 

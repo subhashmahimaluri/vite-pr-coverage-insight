@@ -83,8 +83,8 @@ export const baselineMetaSchema = z.object({
   sha: z.string(),
   ref: z.string().optional(),
   timestamp: z.string().optional(),
-  /** how it was found */
-  source: z.enum(['input', 'cache', 'branch', 'ancestor']),
+  /** how it was found — 'scan' = merge-base tested in this very run (dual-run) */
+  source: z.enum(['input', 'cache', 'branch', 'ancestor', 'scan']),
   /** commits between merge-base and the baseline commit (0 = exact) */
   staleness: z.number().int().min(0).default(0),
 });
