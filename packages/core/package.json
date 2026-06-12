@@ -1,6 +1,6 @@
 {
   "name": "@coverage-insight/core",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Coverage comparison model, diff and markdown formatting — pure functions, no GitHub dependencies",
   "license": "MIT",
   "main": "dist/index.js",
