@@ -744,7 +744,7 @@ function shieldsCardsSection(report: CoverageReport): string {
       '<td align="center">',
       // GitHub comments strip CSS — <h3> is the sanctioned way to get a
       // larger, heavier label with real margin under it
-      `<h3>${METRIC_ICONS[key]} ${METRIC_LABELS[key].toUpperCase()}</h3>`,
+      `<h4>${METRIC_ICONS[key]} ${METRIC_LABELS[key].toUpperCase()}</h4>`,
       `${badge}${counts}`,
       '</td>',
     ].join('\n');
