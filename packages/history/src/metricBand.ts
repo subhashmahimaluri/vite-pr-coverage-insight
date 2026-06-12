@@ -14,10 +14,10 @@ const CARD_W = 196;
 const CARD_H = 112;
 const GAP = 8;
 const LABELS: Record<MetricKey, string> = {
-  statements: 'Statements',
-  branches: 'Branches',
-  functions: 'Functions',
-  lines: 'Lines',
+  statements: '📝 Statements',
+  branches: '🌿 Branches',
+  functions: '🧩 Functions',
+  lines: '📏 Lines',
 };
 
 type Theme = 'light' | 'dark';

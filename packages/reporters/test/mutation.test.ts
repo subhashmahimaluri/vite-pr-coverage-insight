@@ -104,6 +104,41 @@ describe('parseMutationReport', () => {
   });
 });
 
+describe('repo-wide survivor fallback (no survivors in changed files)', () => {
+  function reportCleanChangedFiles() {
+    return buildReport({
+      head: model([
+        { path: 'src/other.ts', covered: 10, total: 10 },
+        { path: 'src/legacy.ts', covered: 5, total: 10 },
+      ]),
+      base: model([{ path: 'src/legacy.ts', covered: 5, total: 10 }]),
+      policy: passPolicy,
+      policyMeta: { description: 'min lines 80%' },
+      generatedAt: '2026-06-12T00:00:00.000Z',
+      pr: { number: 44 },
+      touchedFiles: ['src/other.ts'], // no survivors live here
+      mutation: { summary: parseMutationReport(STRYKER_REPORT, '/repo'), baselineScore: null },
+    });
+  }
+
+  it('the guidance never vanishes: comment falls back to repo-wide top survivors', () => {
+    const report = reportCleanChangedFiles();
+    expect(report.mutation!.changedFileSurvivors).toHaveLength(0);
+    expect(report.mutation!.topSurvivors).toHaveLength(3);
+    const md = renderMarkdown(report);
+    expect(md).toContain(
+      '🧬 Surviving mutants repo-wide (3, showing 3) — pre-existing, never blocking'
+    );
+    expect(md).toContain('`BooleanLiteral`');
+  });
+
+  it('fix plan falls back to repo-wide kill prompts', () => {
+    const plan = renderFixPlan(reportCleanChangedFiles());
+    expect(plan).toContain('## 🧬 Surviving mutants repo-wide (top 3) — suggested kills');
+    expect(plan).toContain('Write a test that kills this surviving mutant');
+  });
+});
+
 describe('report + comment + fix plan integration', () => {
   it('builds report.mutation with delta and CHANGED-file survivors only', () => {
     const report = reportWithMutation();
@@ -126,7 +161,7 @@ describe('report + comment + fix plan integration', () => {
     const md = renderMarkdown(reportWithMutation(), { visuals: 'images' });
     expect(md).toContain('<h3>🧬 MUTATION</h3>');
     expect(md).toContain(encodeURIComponent('40.0%'));
-    expect(md).toContain('2 / 5 mutants killed');
+    expect(md).toContain('2/5 killed');
   });
 
   it('adds kill prompts to the fix plan', () => {

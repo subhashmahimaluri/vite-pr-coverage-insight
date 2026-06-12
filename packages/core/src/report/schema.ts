@@ -165,6 +165,17 @@ export const coverageReportSchema = z.object({
           replacement: z.string().optional(),
         })
       ),
+      /** top repo-wide survivors (capped) — the fallback when the PR's own files are clean */
+      topSurvivors: z
+        .array(
+          z.object({
+            file: z.string(),
+            line: z.number().int(),
+            mutator: z.string(),
+            replacement: z.string().optional(),
+          })
+        )
+        .optional(),
     })
     .optional(),
 });

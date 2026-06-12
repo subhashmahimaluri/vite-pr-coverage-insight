@@ -708,6 +708,13 @@ type Section = {
  * band SVG could be published. Public repos only (the `images` visuals mode
  * already guarantees that).
  */
+const METRIC_ICONS: Record<MetricKey, string> = {
+  statements: '📝',
+  branches: '🌿',
+  functions: '🧩',
+  lines: '📏',
+};
+
 function shieldsCardsSection(report: CoverageReport): string {
   const totals = report.totals;
   if (!totals) return '';
@@ -727,15 +734,17 @@ function shieldsCardsSection(report: CoverageReport): string {
     const badge =
       `<img alt="${METRIC_LABELS[key]} ${m.head.toFixed(1)}% (Δ${delta.trim() || ' n/a'})" ` +
       `src="https://img.shields.io/badge/${message}-${bandHex(m.head)}?style=for-the-badge">`;
+    // single <br> + compact counts keep the cell tight (user feedback:
+    // ~40% of the cell was empty space)
     const counts =
       typeof m.covered === 'number' && typeof m.total === 'number'
-        ? `<br><br><sub><i>${m.covered} / ${m.total} covered</i></sub>`
+        ? `<br><sub><i>${m.covered}/${m.total} covered</i></sub>`
         : '';
     return [
       '<td align="center">',
       // GitHub comments strip CSS — <h3> is the sanctioned way to get a
       // larger, heavier label with real margin under it
-      `<h3>${METRIC_LABELS[key].toUpperCase()}</h3>`,
+      `<h3>${METRIC_ICONS[key]} ${METRIC_LABELS[key].toUpperCase()}</h3>`,
       `${badge}${counts}`,
       '</td>',
     ].join('\n');
@@ -756,7 +765,7 @@ function shieldsCardsSection(report: CoverageReport): string {
         '<h3>🧬 MUTATION</h3>',
         `<img alt="Mutation score ${m.score.toFixed(1)}%" ` +
           `src="https://img.shields.io/badge/${message}-${bandHex(m.score)}?style=for-the-badge">` +
-          `<br><br><sub><i>${m.detected} / ${m.total} mutants killed</i></sub>`,
+          `<br><sub><i>${m.detected}/${m.total} killed</i></sub>`,
         '</td>',
       ].join('\n')
     );
@@ -776,8 +785,18 @@ function shieldsCardsSection(report: CoverageReport): string {
  * tests live in the fix plan, not here).
  */
 function survivingMutantsSection(report: CoverageReport): string {
-  const survivors = report.mutation?.changedFileSurvivors ?? [];
+  const mutation = report.mutation;
+  if (!mutation) return '';
+  // changed-file survivors are the headline; when the PR's own files are
+  // clean, fall back to the repo-wide top list so the guidance never vanishes
+  const changed = mutation.changedFileSurvivors;
+  const survivors = changed.length > 0 ? changed : (mutation.topSurvivors ?? []);
   if (survivors.length === 0) return '';
+  const totalSurvivors = mutation.survived + mutation.noCoverage;
+  const summaryLabel =
+    changed.length > 0
+      ? `🧬 Surviving mutants in changed files (${changed.length}) — bugs the tests missed`
+      : `🧬 Surviving mutants repo-wide (${totalSurvivors}, showing ${survivors.length}) — pre-existing, never blocking`;
   const rows = survivors
     .slice(0, 25)
     .map(
@@ -790,9 +809,9 @@ function survivingMutantsSection(report: CoverageReport): string {
     survivors.length > 25 ? `\n\n_…and ${survivors.length - 25} more — see the fix plan._` : '';
   return [
     '<details>',
-    `<summary>🧬 Surviving mutants in changed files (${survivors.length}) — bugs the tests missed</summary>`,
+    `<summary>${summaryLabel}</summary>`,
     '',
-    'Each row is a code change the test suite did **not** notice. Kill prompts are in the fix-plan artifact.',
+    'Each row is a code change the test suite did **not** notice. Ready-to-paste kill prompts are in the 📥 fix-plan artifact.',
     '',
     '| Where | Mutator | Mutated into |',
     '| --- | --- | --- |',

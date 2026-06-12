@@ -148,11 +148,15 @@ export function renderFixPlan(report: CoverageReport): string {
     );
   }
 
-  const survivors = report.mutation?.changedFileSurvivors ?? [];
+  const changedSurvivors = report.mutation?.changedFileSurvivors ?? [];
+  const survivors =
+    changedSurvivors.length > 0 ? changedSurvivors : (report.mutation?.topSurvivors ?? []);
   if (survivors.length > 0) {
     parts.push(
       '',
-      `## 🧬 Surviving mutants in changed files (${survivors.length}) — kill these`,
+      changedSurvivors.length > 0
+        ? `## 🧬 Surviving mutants in changed files (${survivors.length}) — kill these`
+        : `## 🧬 Surviving mutants repo-wide (top ${survivors.length}) — suggested kills`,
       '',
       'A surviving mutant is a seeded bug the test suite did **not** notice — the',
       'tests pass with the mutation applied. Killing it means writing the assertion',

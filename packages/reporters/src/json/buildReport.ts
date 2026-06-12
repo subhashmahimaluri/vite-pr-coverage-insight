@@ -243,6 +243,12 @@ function buildMutation(
     .filter(([file]) => touched.has(file))
     .flatMap(([, mutants]) => mutants)
     .sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+  // repo-wide fallback so the "what to kill" guidance never disappears when
+  // the PR's own files happen to be clean (or paths don't line up)
+  const topSurvivors = Object.values(summary.survivedByFile)
+    .flat()
+    .sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line)
+    .slice(0, 25);
   return {
     score: summary.score,
     detected: summary.detected,
@@ -254,5 +260,6 @@ function buildMutation(
         ? round2(summary.score - baselineScore)
         : null,
     changedFileSurvivors,
+    ...(topSurvivors.length > 0 ? { topSurvivors } : {}),
   };
 }

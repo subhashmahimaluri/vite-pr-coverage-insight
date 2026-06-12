@@ -299,7 +299,7 @@ describe('visuals modes', () => {
     // card layout: 4 cells, each ONE badge (value + delta) in band-palette hex
     expect(md).toContain('<table><tr>');
     expect(md.match(/<td align="center">/g)).toHaveLength(4);
-    expect(md).toContain('<h3>STATEMENTS</h3>');
+    expect(md).toContain('<h3>📝 STATEMENTS</h3>');
     expect(md).toContain('<sub><i>'); // counts: small + italic, visually muted
     expect(md).toContain(encodeURIComponent('90.0%')); // head value, not 80% base
     expect(md).toContain(encodeURIComponent('▲')); // delta inside the same badge
