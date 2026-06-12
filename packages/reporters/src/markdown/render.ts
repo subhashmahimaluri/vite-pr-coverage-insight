@@ -729,11 +729,13 @@ function shieldsCardsSection(report: CoverageReport): string {
       `src="https://img.shields.io/badge/${message}-${bandHex(m.head)}?style=for-the-badge">`;
     const counts =
       typeof m.covered === 'number' && typeof m.total === 'number'
-        ? `<br><sub>${m.covered} / ${m.total} covered</sub>`
+        ? `<br><br><sub><i>${m.covered} / ${m.total} covered</i></sub>`
         : '';
     return [
       '<td align="center">',
-      `<sub><b>${METRIC_LABELS[key].toUpperCase()}</b></sub><br>`,
+      // GitHub comments strip CSS — <h3> is the sanctioned way to get a
+      // larger, heavier label with real margin under it
+      `<h3>${METRIC_LABELS[key].toUpperCase()}</h3>`,
       `${badge}${counts}`,
       '</td>',
     ].join('\n');
