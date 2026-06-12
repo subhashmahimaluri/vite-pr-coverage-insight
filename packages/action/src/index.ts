@@ -188,11 +188,20 @@ async function runReportMode(): Promise<void> {
   const baselineMode = (getInput('baseline-mode') || 'auto') as 'auto' | 'branch' | 'scan' | 'off';
   const fixPlanFile = getInput('fix-plan-file') || 'coverage-fix-plan.md';
   const uploadArtifact = (getInput('upload-artifact') || 'true') === 'true';
-  const mutationPath = getInput('mutation');
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
 
   // 🧬 optional Stryker mutation report — coverage says the code ran,
-  // the mutation score says the tests would notice a bug
+  // the mutation score says the tests would notice a bug. When the input is
+  // not set, probe Stryker's default json-reporter output path so running
+  // `npx stryker run --reporters json` before the action is all it takes.
+  let mutationPath = getInput('mutation');
+  if (!mutationPath) {
+    const conventional = path.resolve(workspace, 'reports/mutation/mutation.json');
+    if (fs.existsSync(conventional)) {
+      mutationPath = conventional;
+      console.log('🧬 Found reports/mutation/mutation.json — ingesting the mutation report');
+    }
+  }
   let mutationSummary: MutationSummary | null = null;
   if (mutationPath) {
     try {

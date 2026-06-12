@@ -34,7 +34,7 @@ inputs:
     default: 'coverage-fix-plan.md'
   mutation:
     required: false
-    description: "Path to a Stryker mutation report (json reporter output, mutation-testing-report-schema). Adds the 🧬 Mutation score card to the band, lists surviving mutants in changed files in the comment, and adds kill-prompts to the fix plan. In 'baseline' mode the score is recorded so PR runs show a Δ."
+    description: "Path to a Stryker mutation report (json reporter output, mutation-testing-report-schema). Auto-detected at reports/mutation/mutation.json when omitted. Adds the 🧬 Mutation score card to the band, lists surviving mutants in changed files in the comment, and adds kill-prompts to the fix plan. In 'baseline' mode the score is recorded so PR runs show a Δ."
   upload-artifact:
     required: false
     description: 'Upload JSON + HTML + fix plan as a run artifact and link it from the PR comment (📥 download the full report)'
