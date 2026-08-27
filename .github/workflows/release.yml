@@ -30,7 +30,7 @@ jobs:
       - run: npm run build
 
       - name: Create or update the Version Packages PR / publish
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
           version: npx changeset version
           # publishes with sigstore provenance when NPM_TOKEN is configured;
